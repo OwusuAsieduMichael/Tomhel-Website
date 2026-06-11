@@ -10,7 +10,7 @@ export function HeadmasterWelcomeSection() {
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(240px,320px)_1fr] lg:gap-16">
           <FadeIn>
             <div className="mx-auto max-w-xs lg:mx-0">
-              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <div className="surface-card overflow-hidden p-0 shadow-md">
                 <div className="relative aspect-[3/4]">
                   <Image
                     src={headmasterWelcome.image}
@@ -24,7 +24,7 @@ export function HeadmasterWelcomeSection() {
               </div>
               <div className="mt-6 text-center lg:text-left">
                 <p className="font-semibold text-primary">{headmasterWelcome.name}</p>
-                <p className="text-sm text-muted">{headmasterWelcome.title}</p>
+                <p className="text-sm text-deep">{headmasterWelcome.title}</p>
                 <p className="mt-1 text-sm font-medium text-taim-dark">{siteConfig.name}</p>
               </div>
             </div>
@@ -41,7 +41,7 @@ export function HeadmasterWelcomeSection() {
 
               <div className="mt-8 space-y-5 border-l-2 border-taim/40 pl-6 md:pl-8">
                 {headmasterWelcome.paragraphs.map((paragraph) => (
-                  <p key={paragraph.slice(0, 32)} className="text-base leading-relaxed text-muted md:text-lg">
+                  <p key={paragraph.slice(0, 32)} className="text-base leading-relaxed text-deep md:text-lg">
                     {paragraph}
                   </p>
                 ))}
@@ -52,7 +52,7 @@ export function HeadmasterWelcomeSection() {
                   {headmasterWelcome.closing}
                 </p>
                 <p className="mt-3 font-medium text-primary">{headmasterWelcome.name}</p>
-                <p className="text-sm text-muted">{headmasterWelcome.title}, {siteConfig.shortName}</p>
+                <p className="text-sm text-deep">{headmasterWelcome.title}, {siteConfig.shortName}</p>
               </footer>
             </div>
           </FadeIn>

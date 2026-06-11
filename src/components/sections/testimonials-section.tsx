@@ -19,14 +19,14 @@ export function TestimonialsSection() {
         <div className="mt-16 grid gap-6 md:grid-cols-3">
           {testimonials.map((item, index) => (
             <FadeIn key={item.author} delay={index * 0.1}>
-              <Card className="h-full border-border/60">
+              <Card className="h-full border-black/[0.07] bg-white/95 shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg hover:shadow-black/[0.08]">
                 <CardContent className="flex h-full flex-col p-8">
                   <blockquote className="flex-1 text-base leading-relaxed text-primary/90">
                     &ldquo;{item.quote}&rdquo;
                   </blockquote>
                   <footer className="mt-6 border-t border-border pt-6">
                     <p className="font-semibold text-primary">{item.author}</p>
-                    <p className="text-sm text-muted">{item.role}</p>
+                    <p className="text-sm text-deep">{item.role}</p>
                   </footer>
                 </CardContent>
               </Card>

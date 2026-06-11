@@ -11,11 +11,13 @@ export function organizationJsonLd() {
     email: siteConfig.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: siteConfig.address,
+      postOfficeBoxNumber: "151",
+      streetAddress: siteConfig.poBox,
       addressLocality: siteConfig.addressLocality,
       addressRegion: siteConfig.addressRegion,
       addressCountry: "GH",
     },
+    foundingDate: "2003-10",
   };
 }
 

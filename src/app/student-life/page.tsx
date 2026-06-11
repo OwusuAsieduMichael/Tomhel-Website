@@ -29,7 +29,7 @@ export default function StudentLifePage() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {studentLifeCategories.map((category, index) => (
               <FadeIn key={category.title} delay={index * 0.08}>
-                <article className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-1 hover:shadow-lg">
+                <article className="group surface-card overflow-hidden p-0 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.08]">
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <Image
                       src={category.image}
@@ -41,7 +41,7 @@ export default function StudentLifePage() {
                   </div>
                   <div className="p-6">
                     <h2 className="text-xl font-semibold text-primary">{category.title}</h2>
-                    <p className="mt-3 leading-relaxed text-muted">{category.description}</p>
+                    <p className="mt-3 text-[15px] leading-relaxed text-deep">{category.description}</p>
                   </div>
                 </article>
               </FadeIn>
@@ -57,7 +57,7 @@ export default function StudentLifePage() {
               <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">
                 A community that celebrates every talent
               </h2>
-              <p className="mt-6 text-lg leading-relaxed text-muted">
+              <p className="mt-6 text-lg leading-relaxed text-deep">
                 From the football field to the debate podium, Tomhel encourages every student to explore,
                 compete, and contribute. Our vibrant culture builds confidence, teamwork, and a lifelong
                 love of learning.

@@ -10,11 +10,11 @@ export function StatsSection() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <FadeIn key={stat.label} delay={index * 0.08}>
-              <div className="text-center">
+              <div className="surface-card text-center">
                 <p className="text-4xl font-bold tracking-tight text-primary md:text-5xl lg:text-6xl">
                   <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                 </p>
-                <p className="mt-2 text-sm font-medium uppercase tracking-wider text-muted">{stat.label}</p>
+                <p className="mt-2 text-sm font-medium uppercase tracking-wider text-deep">{stat.label}</p>
               </div>
             </FadeIn>
           ))}

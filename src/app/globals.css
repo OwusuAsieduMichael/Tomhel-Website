@@ -62,4 +62,34 @@
     background-position: center top;
     background-repeat: no-repeat;
   }
+
+  .text-deep {
+    color: #3a3a3a;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-black/[0.07] bg-white/95 p-6 shadow-md shadow-black/[0.06] backdrop-blur-sm;
+  }
+
+  .bg-section-texture .text-muted {
+    color: #404040;
+  }
+
+  .bg-section-texture .prose {
+    color: #404040;
+  }
+
+  .bg-section-texture .bg-card,
+  .bg-section-texture .surface-card {
+    border-color: rgb(0 0 0 / 0.07);
+    background-color: rgb(255 255 255 / 0.95);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.06);
+    backdrop-filter: blur(8px);
+  }
+
+  .bg-section-texture a.bg-card:hover,
+  .bg-section-texture article.bg-card:hover,
+  .bg-section-texture .group.bg-card:hover {
+    box-shadow: 0 10px 28px rgb(0 0 0 / 0.09);
+  }
 }

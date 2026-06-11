@@ -49,7 +49,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
         <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-primary md:text-4xl lg:text-5xl">
           {article.title}
         </h1>
-        <time className="mt-4 block text-sm text-muted" dateTime={article.publishedAt}>
+        <time className="mt-4 block text-sm text-deep" dateTime={article.publishedAt}>
           {new Date(article.publishedAt).toLocaleDateString("en-GH", {
             year: "numeric",
             month: "long",
@@ -63,13 +63,15 @@ export default async function NewsArticlePage({ params }: PageProps) {
           </div>
         )}
 
-        <div className="prose prose-lg mt-10 max-w-none text-muted">
+        <div className="surface-card mt-10 max-w-none px-8 py-8 md:px-10">
+        <div className="prose prose-lg max-w-none text-deep">
           <p className="text-lg leading-relaxed">{article.excerpt}</p>
           <p className="mt-6 leading-relaxed">
             This article is managed through Sanity CMS. Connect your Sanity project to publish full article content
             with rich text, images, and embedded media. Visit the Sanity Studio to add complete body content for
             this story.
           </p>
+        </div>
         </div>
       </Container>
     </Section>

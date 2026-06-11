@@ -39,19 +39,19 @@ export default function AdmissionsPage() {
         <Container>
           <FadeIn>
             <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">Admission Process</h2>
-            <p className="mt-4 max-w-2xl text-lg text-muted">
+            <p className="mt-4 max-w-2xl text-lg text-deep">
               Our streamlined process ensures a smooth experience from inquiry to enrollment.
             </p>
           </FadeIn>
           <div className="mt-12 grid gap-6 md:grid-cols-5">
             {admissionSteps.map((step, index) => (
               <FadeIn key={step.step} delay={index * 0.08}>
-                <div className="relative rounded-2xl border border-border p-6">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
+                <div className="surface-card relative h-full">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-taim-dark text-sm font-bold text-white">
                     {step.step}
                   </span>
                   <h3 className="mt-4 font-semibold text-primary">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{step.description}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-deep">{step.description}</p>
                 </div>
               </FadeIn>
             ))}
@@ -66,7 +66,7 @@ export default function AdmissionsPage() {
               <h2 className="text-3xl font-bold tracking-tight text-primary">Requirements</h2>
               <ul className="mt-6 space-y-3">
                 {requirements.map((req) => (
-                  <li key={req} className="flex items-start gap-3 text-muted">
+                  <li key={req} className="flex items-start gap-3 text-deep">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
                     {req}
                   </li>
@@ -75,8 +75,8 @@ export default function AdmissionsPage() {
             </FadeIn>
             <FadeIn delay={0.1}>
               <h2 className="text-3xl font-bold tracking-tight text-primary">Application Form</h2>
-              <p className="mt-4 text-muted">Complete the form below to begin your application.</p>
-              <div className="mt-8 rounded-2xl border border-border bg-card p-6 md:p-8">
+              <p className="mt-4 text-deep">Complete the form below to begin your application.</p>
+              <div className="surface-card mt-8 p-6 md:p-8">
                 <ApplicationForm />
               </div>
             </FadeIn>
@@ -89,11 +89,11 @@ export default function AdmissionsPage() {
           <FadeIn>
             <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">Frequently Asked Questions</h2>
           </FadeIn>
-          <Accordion type="single" collapsible className="mt-8 max-w-3xl">
+          <Accordion type="single" collapsible className="surface-card mt-8 max-w-3xl px-6 py-2">
             {admissionFaqs.map((faq, index) => (
-              <AccordionItem key={index} value={`faq-${index}`}>
-                <AccordionTrigger>{faq.question}</AccordionTrigger>
-                <AccordionContent>{faq.answer}</AccordionContent>
+              <AccordionItem key={index} value={`faq-${index}`} className="border-black/[0.06]">
+                <AccordionTrigger className="text-primary">{faq.question}</AccordionTrigger>
+                <AccordionContent className="text-deep">{faq.answer}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

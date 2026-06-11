@@ -9,9 +9,11 @@ export const siteConfig = {
   phoneHref: "+233244242394",
   email: "tomhelschool@yahoo.com",
   admissionsEmail: "tomhelschool@yahoo.com",
-  address: "Effiduasi, Ashanti Region, Ghana",
+  poBox: "P.O. Box 151",
+  address: "P.O. Box 151, Effiduasi, Ashanti Region, Ghana",
   addressLocality: "Effiduasi",
   addressRegion: "Ashanti",
+  founded: "October 2003",
   officeHours: "Monday – Friday: 7:30 AM – 4:30 PM",
   social: {
     facebook: "https://www.facebook.com/profile.php?id=100077019686158",
@@ -23,11 +25,24 @@ export const siteConfig = {
 /** Local school photos — files live in public/IMGG/ */
 export const schoolImages = {
   logo: "/IMGG/logo.jpg",
-  hero: "/IMGG/hero-background.jpg",
-  kindergarten: "/IMGG/kindergarten.jpg",
+  hero: "/IMGG/HERO1.jpg",
+  classroom: "/IMGG/CLASSROOM.jpg",
+  ictLab: "/IMGG/ICT%20LAB.jpg",
+  library: "/IMGG/LIBRARY.png",
+  playground: "/IMGG/PLAYGROUND.jpg",
+  schoolBus: "/IMGG/SCHOOL%20BUS.jpg",
+  staffTeachers: "/IMGG/STaff%20Teachers.jpg",
   headmaster: "/IMGG/HEADMASTER.jpg",
   sectionBackground: "/IMGG/BACKKKOO.png",
+  /** @deprecated use playground or classroom */
+  kindergarten: "/IMGG/PLAYGROUND.jpg",
 } as const;
+
+/** Landing page hero — alternates every 8 seconds */
+export const heroSlides = [
+  { src: schoolImages.classroom, alt: "Tomhel Preparatory School classroom learning environment" },
+  { src: "/IMGG/HERO1.jpg", alt: "Tomhel Preparatory School campus" },
+] as const;
 
 export const headmasterWelcome = {
   name: "Mr. Thomas Nyarko-Danquah",
@@ -84,7 +99,7 @@ export const stats = [
   { label: "Students", value: 850, suffix: "+" },
   { label: "Teachers", value: 45, suffix: "+" },
   { label: "Success Rate", value: 98, suffix: "%" },
-  { label: "Years of Excellence", value: 15, suffix: "+" },
+  { label: "Years of Excellence", value: 20, suffix: "+" },
 ];
 
 export const programs = [
@@ -92,30 +107,30 @@ export const programs = [
     title: "Kindergarten",
     description:
       "Play-based learning that builds foundational literacy, numeracy, and social skills in a nurturing environment.",
-    image: schoolImages.kindergarten,
+    image: schoolImages.playground,
     href: "/academics#kindergarten",
   },
   {
     title: "Primary",
     description:
       "Comprehensive primary education aligned with Ghana Education Service standards, fostering curiosity and critical thinking.",
-    image: schoolImages.hero,
+    image: schoolImages.classroom,
     href: "/academics#primary",
   },
   {
     title: "Junior High School",
     description:
       "BECE-focused preparation with strong subject mastery, leadership training, and career guidance.",
-    image: schoolImages.hero,
+    image: schoolImages.ictLab,
     href: "/academics#jhs",
   },
 ];
 
 export const facilities = [
-  { title: "Classrooms", image: schoolImages.hero },
-  { title: "ICT Lab", image: schoolImages.kindergarten },
-  { title: "Library", image: schoolImages.hero },
-  { title: "Playground", image: schoolImages.kindergarten },
+  { title: "Classrooms", image: schoolImages.classroom },
+  { title: "ICT Lab", image: schoolImages.ictLab },
+  { title: "Library", image: schoolImages.library },
+  { title: "Playground", image: schoolImages.playground },
 ];
 
 export const testimonials = [
@@ -156,7 +171,7 @@ export const leadership = [
 ];
 
 export const historyTimeline = [
-  { year: "2010", title: "Foundation", description: "Tomhel Preparatory School was established with a vision for excellence." },
+  { year: "2003", title: "Foundation", description: "Tomhel Preparatory School was founded in October with a vision for excellence in Effiduasi." },
   { year: "2013", title: "Primary Expansion", description: "Added full primary program serving grades 1–6." },
   { year: "2016", title: "JHS Launch", description: "Junior High School program launched with first BECE cohort." },
   { year: "2019", title: "ICT Integration", description: "Expanded digital learning tools and computer literacy across all grade levels." },
@@ -199,36 +214,56 @@ export const studentLifeCategories = [
   {
     title: "Sports",
     description: "Football, athletics, volleyball, and inter-school competitions build teamwork and fitness.",
-    image: schoolImages.hero,
+    image: schoolImages.playground,
   },
   {
     title: "Clubs",
     description: "Debate, robotics, art, music, and environmental clubs nurture diverse talents.",
-    image: schoolImages.kindergarten,
+    image: schoolImages.library,
   },
   {
     title: "Competitions",
     description: "Students excel in science fairs, spelling bees, and national academic contests.",
-    image: schoolImages.hero,
+    image: schoolImages.classroom,
   },
   {
     title: "Excursions",
     description: "Educational trips to museums, historical sites, and science centers broaden horizons.",
-    image: schoolImages.kindergarten,
+    image: schoolImages.schoolBus,
   },
   {
     title: "Cultural Activities",
     description: "Traditional dance, drama, and heritage celebrations honor Ghanaian culture.",
-    image: schoolImages.hero,
+    image: schoolImages.staffTeachers,
   },
 ];
 
 export const galleryCategories = [
-  { id: "campus", label: "Campus", images: [schoolImages.hero, schoolImages.hero, schoolImages.kindergarten] },
-  { id: "academics", label: "Academics", images: [schoolImages.kindergarten, schoolImages.kindergarten, schoolImages.hero] },
-  { id: "events", label: "Events", images: [schoolImages.hero, schoolImages.kindergarten, schoolImages.hero] },
-  { id: "sports", label: "Sports", images: [schoolImages.hero, schoolImages.hero, schoolImages.kindergarten] },
-  { id: "graduation", label: "Graduation", images: [schoolImages.kindergarten, schoolImages.hero, schoolImages.kindergarten] },
+  {
+    id: "campus",
+    label: "Campus",
+    images: [schoolImages.hero, schoolImages.schoolBus, schoolImages.playground],
+  },
+  {
+    id: "academics",
+    label: "Academics",
+    images: [schoolImages.classroom, schoolImages.ictLab, schoolImages.library],
+  },
+  {
+    id: "events",
+    label: "Events",
+    images: [schoolImages.staffTeachers, schoolImages.hero, schoolImages.classroom],
+  },
+  {
+    id: "sports",
+    label: "Sports",
+    images: [schoolImages.playground, schoolImages.playground, schoolImages.hero],
+  },
+  {
+    id: "graduation",
+    label: "Graduation",
+    images: [schoolImages.staffTeachers, schoolImages.classroom, schoolImages.library],
+  },
 ];
 
 export const academicsData = [
@@ -266,7 +301,7 @@ export const fallbackNews = [
     category: "Achievements",
     publishedAt: "2025-05-15",
     slug: "science-fair-2025",
-    image: schoolImages.kindergarten,
+    image: schoolImages.classroom,
   },
   {
     _id: "2",
@@ -275,7 +310,7 @@ export const fallbackNews = [
     category: "Announcements",
     publishedAt: "2025-04-01",
     slug: "admissions-2025-2026",
-    image: schoolImages.kindergarten,
+    image: schoolImages.hero,
   },
   {
     _id: "3",
@@ -284,6 +319,6 @@ export const fallbackNews = [
     category: "Events",
     publishedAt: "2025-03-20",
     slug: "cultural-day-2025",
-    image: schoolImages.hero,
+    image: schoolImages.staffTeachers,
   },
 ];

@@ -23,7 +23,7 @@ export function ProgramsSection() {
             <FadeIn key={program.title} delay={index * 0.1}>
               <Link
                 href={program.href}
-                className="group block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group surface-card block overflow-hidden p-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.08]"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image
@@ -39,7 +39,7 @@ export function ProgramsSection() {
                     <h3 className="text-xl font-semibold text-primary">{program.title}</h3>
                     <ArrowUpRight className="h-5 w-5 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent" aria-hidden />
                   </div>
-                  <p className="mt-3 leading-relaxed text-muted">{program.description}</p>
+                  <p className="mt-3 text-[15px] leading-relaxed text-deep">{program.description}</p>
                 </div>
               </Link>
             </FadeIn>

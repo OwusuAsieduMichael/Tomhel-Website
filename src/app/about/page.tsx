@@ -4,7 +4,7 @@ import { Container, Section } from "@/components/layout/container";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
-import { coreValues, historyTimeline, leadership, schoolImages } from "@/lib/constants";
+import { coreValues, historyTimeline, leadership, schoolImages, siteConfig } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -20,7 +20,7 @@ export default function AboutPage() {
       <PageHero
         eyebrow="About Us"
         title="A legacy of excellence in education"
-        description="Since 2010, Tomhel Preparatory School has been dedicated to nurturing academic excellence, character, and leadership in every student."
+        description={`Since ${siteConfig.founded}, Tomhel Preparatory School has been dedicated to nurturing academic excellence, character, and leadership in every student.`}
       />
 
       <BelowHeroShell>
@@ -29,14 +29,15 @@ export default function AboutPage() {
           <div className="grid items-center gap-16 lg:grid-cols-2">
             <FadeIn>
               <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">Our Story</h2>
-              <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted">
+              <div className="mt-6 space-y-4 text-lg leading-relaxed text-deep">
                 <p>
-                  Tomhel Preparatory School was founded with a clear vision: to provide quality education that
-                  nurtures the whole child — academically, morally, and socially.
+                  Tomhel Preparatory School was founded in {siteConfig.founded} with a clear vision: to provide quality
+                  education that nurtures the whole child — academically, morally, and socially.
                 </p>
                 <p>
-                  What began as a small community school in Effiduasi has grown into one of the Ashanti Region&apos;s most
-                  respected preparatory institutions, serving students from Kindergarten through Junior High School.
+                  What began as a small community school in Effiduasi, with postal address {siteConfig.poBox}, has grown
+                  into one of the Ashanti Region&apos;s most respected preparatory institutions, serving students from
+                  Kindergarten through Junior High School.
                 </p>
                 <p>
                   Today, we combine traditional values of discipline and excellence with modern teaching methods,
@@ -47,8 +48,8 @@ export default function AboutPage() {
             <FadeIn delay={0.1}>
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
                 <Image
-                  src={schoolImages.hero}
-                  alt="Tomhel Preparatory School campus"
+                  src={schoolImages.staffTeachers}
+                  alt="Tomhel Preparatory School staff and teachers"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -64,14 +65,14 @@ export default function AboutPage() {
           <div className="grid gap-12 md:grid-cols-2">
             <FadeIn>
               <h2 className="text-2xl font-bold text-primary md:text-3xl">Mission</h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted">
+              <p className="mt-4 text-lg leading-relaxed text-deep">
                 Provide quality education that nurtures academic excellence, character development, leadership,
                 creativity, and lifelong learning.
               </p>
             </FadeIn>
             <FadeIn delay={0.1}>
               <h2 className="text-2xl font-bold text-primary md:text-3xl">Vision</h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted">
+              <p className="mt-4 text-lg leading-relaxed text-deep">
                 To be a leading preparatory school in Ghana, recognized for producing disciplined, innovative,
                 and socially responsible leaders who excel in higher education and beyond.
               </p>
@@ -88,9 +89,9 @@ export default function AboutPage() {
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {coreValues.map((value, index) => (
               <FadeIn key={value.title} delay={index * 0.08}>
-                <div className="rounded-2xl border border-border p-6">
+                <div className="surface-card h-full transition-shadow hover:shadow-lg hover:shadow-black/[0.08]">
                   <h3 className="text-lg font-semibold text-primary">{value.title}</h3>
-                  <p className="mt-2 text-muted">{value.description}</p>
+                  <p className="mt-2 text-[15px] leading-relaxed text-deep">{value.description}</p>
                 </div>
               </FadeIn>
             ))}
@@ -111,7 +112,7 @@ export default function AboutPage() {
                     <Image src={person.image} alt={person.name} fill className="object-cover" sizes="160px" />
                   </div>
                   <h3 className="mt-4 font-semibold text-primary">{person.name}</h3>
-                  <p className="text-sm text-muted">{person.role}</p>
+                  <p className="text-sm text-deep">{person.role}</p>
                 </div>
               </FadeIn>
             ))}
@@ -133,9 +134,11 @@ export default function AboutPage() {
                     <div className="hidden w-1/2 md:block" />
                     <div className="absolute left-4 top-2 h-3 w-3 -translate-x-1/2 rounded-full bg-accent md:left-1/2" aria-hidden />
                     <div className="ml-10 w-full md:ml-0 md:w-1/2 md:px-8">
-                      <span className="text-sm font-bold text-accent">{item.year}</span>
-                      <h3 className="mt-1 text-xl font-semibold text-primary">{item.title}</h3>
-                      <p className="mt-2 text-muted">{item.description}</p>
+                      <div className="surface-card">
+                        <span className="text-sm font-bold text-accent">{item.year}</span>
+                        <h3 className="mt-1 text-xl font-semibold text-primary">{item.title}</h3>
+                        <p className="mt-2 text-[15px] leading-relaxed text-deep">{item.description}</p>
+                      </div>
                     </div>
                   </div>
                 </FadeIn>

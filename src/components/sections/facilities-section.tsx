@@ -19,7 +19,7 @@ export function FacilitiesSection() {
         <div className="mt-16 grid gap-4 sm:grid-cols-2">
           {facilities.map((facility, index) => (
             <FadeIn key={facility.title} delay={index * 0.08}>
-              <div className="group relative aspect-[16/10] overflow-hidden rounded-2xl">
+              <div className="group relative aspect-[16/10] overflow-hidden rounded-2xl surface-card p-0 shadow-md">
                 <Image
                   src={facility.image}
                   alt={facility.title}

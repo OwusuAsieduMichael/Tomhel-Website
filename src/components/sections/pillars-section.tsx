@@ -21,7 +21,7 @@ export function PillarsSection() {
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-primary md:text-4xl lg:text-5xl">
               A foundation for lifelong success
             </h2>
-            <p className="mt-4 text-lg text-muted">
+            <p className="mt-4 text-lg text-deep">
               Four pillars guide everything we do — from the classroom to the community.
             </p>
           </div>
@@ -32,7 +32,7 @@ export function PillarsSection() {
             const Icon = iconMap[pillar.icon] ?? GraduationCap;
             return (
               <FadeIn key={pillar.title} delay={index * 0.1}>
-                <Card className="h-full border-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <Card className="h-full border-black/[0.07] bg-white/95 shadow-md backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.08]">
                   <CardHeader>
                     <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
                       <Icon className="h-6 w-6 text-accent" aria-hidden />
@@ -40,7 +40,7 @@ export function PillarsSection() {
                     <CardTitle>{pillar.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="leading-relaxed text-muted">{pillar.description}</p>
+                    <p className="text-[15px] leading-relaxed text-deep">{pillar.description}</p>
                   </CardContent>
                 </Card>
               </FadeIn>
