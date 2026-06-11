@@ -4,6 +4,7 @@ import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react
 import { Container } from "@/components/layout/container";
 import { Separator } from "@/components/ui/separator";
 import { navigation, schoolImages, siteConfig } from "@/lib/constants";
+import { PhoneLinks } from "@/components/layout/phone-links";
 
 export function SiteFooter() {
   return (
@@ -44,11 +45,9 @@ export function SiteFooter() {
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 {siteConfig.address}
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0" aria-hidden />
-                <a href={`tel:${siteConfig.phoneHref}`} className="hover:text-white">
-                  {siteConfig.phone}
-                </a>
+              <li className="flex items-start gap-2">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <PhoneLinks linkClassName="hover:text-white" />
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0" aria-hidden />

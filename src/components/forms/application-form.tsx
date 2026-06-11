@@ -63,6 +63,8 @@ export function ApplicationForm() {
               <SelectValue placeholder="Select grade level" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="creche">Creche</SelectItem>
+              <SelectItem value="nursery">Nursery</SelectItem>
               <SelectItem value="kg1">Kindergarten 1</SelectItem>
               <SelectItem value="kg2">Kindergarten 2</SelectItem>
               <SelectItem value="primary">Primary (Grades 1–6)</SelectItem>

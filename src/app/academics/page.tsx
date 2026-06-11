@@ -10,7 +10,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = createPageMetadata({
   title: "Academics",
   description:
-    "Explore Tomhel's academic programs from Kindergarten through Junior High School — curriculum, subjects, methodology, and assessments.",
+    "Explore Tomhel's academic programs from Creche through Junior High School — curriculum, subjects, methodology, and assessments.",
   path: "/academics",
 });
 
@@ -23,7 +23,7 @@ export default function AcademicsPage() {
       <PageHero
         eyebrow="Academics"
         title="Rigorous programs for every learner"
-        description="From early childhood through BECE preparation, our curriculum is designed to challenge, inspire, and prepare students for success."
+        description="From Creche and Nursery through BECE preparation, our curriculum is designed to challenge, inspire, and prepare students for success."
       />
 
       <BelowHeroShell>

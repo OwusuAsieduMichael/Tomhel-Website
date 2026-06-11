@@ -18,7 +18,7 @@ export function ProgramsSection() {
           </div>
         </FadeIn>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {programs.map((program, index) => (
             <FadeIn key={program.title} delay={index * 0.1}>
               <Link

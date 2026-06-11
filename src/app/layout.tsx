@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { ScrollControls } from "@/components/layout/scroll-controls";
 import { SkipLink } from "@/components/layout/skip-link";
 import { siteConfig, schoolImages } from "@/lib/constants";
 import { organizationJsonLd } from "@/lib/seo";
@@ -70,6 +71,7 @@ export default function RootLayout({
         <SkipLink />
         <SiteHeader />
         <main id="main-content">{children}</main>
+        <ScrollControls />
         <SiteFooter />
       </body>
     </html>

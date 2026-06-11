@@ -66,11 +66,17 @@ export default async function NewsArticlePage({ params }: PageProps) {
         <div className="surface-card mt-10 max-w-none px-8 py-8 md:px-10">
         <div className="prose prose-lg max-w-none text-deep">
           <p className="text-lg leading-relaxed">{article.excerpt}</p>
-          <p className="mt-6 leading-relaxed">
-            This article is managed through Sanity CMS. Connect your Sanity project to publish full article content
-            with rich text, images, and embedded media. Visit the Sanity Studio to add complete body content for
-            this story.
-          </p>
+          {article.body?.map((paragraph) => (
+            <p key={paragraph.slice(0, 40)} className="mt-6 leading-relaxed">
+              {paragraph}
+            </p>
+          ))}
+          {!article.body?.length && (
+            <p className="mt-6 leading-relaxed">
+              This article is managed through Sanity CMS. Connect your Sanity project to publish full article content
+              with rich text, images, and embedded media.
+            </p>
+          )}
         </div>
         </div>
       </Container>

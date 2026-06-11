@@ -3,10 +3,15 @@ export const siteConfig = {
   shortName: "Tomhel",
   slogan: "Press On to Higher Grounds",
   description:
-    "Quality education nurturing academic excellence, character development, leadership, creativity, and lifelong learning in Ghana.",
+    "Recognized as the best private school in the Sekyere-East District, Tomhel delivers quality education with academic excellence, character development, leadership, and a secure learning environment in Ghana.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://tomhel.edu.gh",
-  phone: "024 424 2394",
+  phone: "024 424 2394 / 054 773 6790 / 054 773 6170",
   phoneHref: "+233244242394",
+  phones: [
+    { display: "024 424 2394", href: "+233244242394" },
+    { display: "054 773 6790", href: "+233547736790" },
+    { display: "054 773 6170", href: "+233547736170" },
+  ] as const,
   email: "tomhelschool@yahoo.com",
   admissionsEmail: "tomhelschool@yahoo.com",
   poBox: "P.O. Box 151",
@@ -14,6 +19,8 @@ export const siteConfig = {
   addressLocality: "Effiduasi",
   addressRegion: "Ashanti",
   founded: "October 2003",
+  foundingEnrollment: 15,
+  currentEnrollment: "800+",
   officeHours: "Monday – Friday: 7:30 AM – 4:30 PM",
   social: {
     facebook: "https://www.facebook.com/profile.php?id=100077019686158",
@@ -33,7 +40,12 @@ export const schoolImages = {
   schoolBus: "/IMGG/SCHOOL%20BUS.jpg",
   staffTeachers: "/IMGG/STaff%20Teachers.jpg",
   headmaster: "/IMGG/HEADMASTER.jpg",
+  academicCoordinator: "/IMGG/ACADEMIC%20CORDINATOR.jpg",
+  seniorTeacher: "/IMGG/SENIOR%20TEACHER.jpg",
+  studentAffairs: "/IMGG/STUDENT.jpg",
+  nsmqNews: "/IMGG/NSMQ-2022.jpg",
   sectionBackground: "/IMGG/BACKKKOO.png",
+  schoolVideo: "/IMGG/TOMHEL.mp4",
   /** @deprecated use playground or classroom */
   kindergarten: "/IMGG/PLAYGROUND.jpg",
 } as const;
@@ -48,7 +60,7 @@ export const staffSection = {
   eyebrow: "Our Staff",
   title: "Dedicated educators behind every learner",
   description:
-    "Tomhel's teachers and support staff bring expertise, discipline, and genuine care to the classroom — guiding pupils from Kindergarten through Junior High with the same commitment to excellence that defines our school.",
+    "Tomhel's teachers and support staff bring expertise, discipline, and genuine care to the classroom — guiding pupils from Creche through Junior High with the same commitment to excellence that defines our school.",
   image: schoolImages.staffTeachers,
 } as const;
 
@@ -104,26 +116,86 @@ export const pillars = [
 ];
 
 export const stats = [
-  { label: "Students", value: 850, suffix: "+" },
+  { label: "Students", value: 800, suffix: "+" },
   { label: "Teachers", value: 45, suffix: "+" },
   { label: "Success Rate", value: 98, suffix: "%" },
   { label: "Years of Excellence", value: 20, suffix: "+" },
 ];
 
+export const schoolHistory = {
+  founders:
+    "the Late Mrs Helena Nyarko Dankwa and her husband, Mr Thomas Nyarko Dankwa, with the support of their children and family",
+  story: [
+    `Tomhel Preparatory School was founded in ${siteConfig.founded} by the Late Mrs Helena Nyarko Dankwa and her husband, Mr Thomas Nyarko Dankwa, with the support of their children and family. What began as a humble beginning with just ${siteConfig.foundingEnrollment} pupils has grown into one of the most trusted names in private education in the Sekyere-East District.`,
+    `From Creche through Junior High School, Tomhel now serves more than ${siteConfig.currentEnrollment} students — recognized as the best private school in the district and committed to the same values of discipline, care, and excellence that shaped our earliest classrooms in Effiduasi.`,
+    "Today, Tomhel continues to produce exceptional, world-ready young people — equipped not only for examinations, but for leadership, integrity, and success beyond the school gates.",
+  ],
+} as const;
+
+export const vantageSection = {
+  eyebrow: "The Tomhel Vantage",
+  title: "Where recognition meets responsibility",
+  intro:
+    "Parents choose Tomhel because excellence here is proven — not promised. We combine district-leading academic standards with a campus built for safety, transparency, and peace of mind.",
+  recognition: {
+    badge: "District Recognition",
+    title: "Best Private School in the Sekyere-East District",
+    description:
+      "Tomhel Preparatory School is recognized as the leading private school in the Sekyere-East District — a distinction earned through consistent academic results, disciplined school culture, and the trust of families across Effiduasi and beyond.",
+    icon: "Award",
+  },
+  security: {
+    badge: "Campus Security",
+    title: "CCTV monitoring across classrooms and key vantage points",
+    description:
+      "The safety of every pupil and staff member is a daily priority. Tomhel has installed comprehensive CCTV coverage throughout the school environment to support orderly operations and secure learning.",
+    points: [
+      "Classrooms monitored to uphold teaching standards and pupil welfare",
+      "Corridors, entrances, and other vantage areas under continuous observation",
+      "A visible commitment to security that reassures parents and strengthens school discipline",
+    ],
+    icon: "Cctv",
+  },
+  closing:
+    "Excellence you can see. Security you can trust. That is the Tomhel advantage.",
+} as const;
+
+export const schoolVideo = {
+  src: schoolImages.schoolVideo,
+  poster: schoolImages.hero,
+  eyebrow: "Campus Video",
+  title: "See Tomhel in action",
+  description:
+    "Take a closer look at life at Tomhel Preparatory School — our classrooms, community, and the values that guide everything we do from Creche through Junior High.",
+  highlights: [
+    "A welcoming campus built for learning from early years to BECE preparation",
+    "Dedicated teachers and staff committed to discipline, care, and excellence",
+    "A school family rooted in Effiduasi with a proud record of alumni achievement",
+  ],
+  caption: "Official Tomhel Preparatory School video",
+} as const;
+
 export const programs = [
+  {
+    title: "Creche",
+    description:
+      "A safe, nurturing start for our youngest learners with attentive care, early stimulation, and gentle routines.",
+    image: schoolImages.playground,
+    href: "/academics#creche",
+  },
+  {
+    title: "Nursery",
+    description:
+      "Structured early learning that builds confidence, communication, and readiness for Kindergarten.",
+    image: schoolImages.classroom,
+    href: "/academics#nursery",
+  },
   {
     title: "Kindergarten",
     description:
       "Play-based learning that builds foundational literacy, numeracy, and social skills in a nurturing environment.",
     image: schoolImages.playground,
     href: "/academics#kindergarten",
-  },
-  {
-    title: "Primary",
-    description:
-      "Comprehensive primary education aligned with Ghana Education Service standards, fostering curiosity and critical thinking.",
-    image: schoolImages.classroom,
-    href: "/academics#primary",
   },
   {
     title: "Junior High School",
@@ -173,18 +245,33 @@ export const coreValues = [
 
 export const leadership = [
   { name: headmasterWelcome.name, role: headmasterWelcome.title, image: headmasterWelcome.image },
-  { name: "Mrs. Helena Adom", role: "Academic Coordinator", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80" },
-  { name: "Mr. Kofi Annan", role: "Senior Teacher", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80" },
-  { name: "Mrs. Ama Serwaa", role: "Student Affairs", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80" },
+  { name: "Mrs. Helena Adom", role: "Academic Coordinator", image: schoolImages.academicCoordinator },
+  { name: "Mr. Kofi Annan", role: "Senior Teacher", image: schoolImages.seniorTeacher },
+  { name: "Mrs. Ama Serwaa", role: "Student Affairs", image: schoolImages.studentAffairs },
 ];
 
 export const historyTimeline = [
-  { year: "2003", title: "Foundation", description: "Tomhel Preparatory School was founded in October with a vision for excellence in Effiduasi." },
+  {
+    year: "2003",
+    title: "Foundation",
+    description:
+      "Founded in October by the Late Mrs Helena Nyarko Dankwa and Mr Thomas Nyarko Dankwa, with their children and family, Tomhel opened its doors to 15 pupils in Effiduasi with a vision for quality education.",
+  },
   { year: "2013", title: "Primary Expansion", description: "Added full primary program serving grades 1–6." },
   { year: "2016", title: "JHS Launch", description: "Junior High School program launched with first BECE cohort." },
   { year: "2019", title: "ICT Integration", description: "Expanded digital learning tools and computer literacy across all grade levels." },
-  { year: "2022", title: "Modern Campus", description: "New ICT lab, library, and upgraded facilities completed." },
-  { year: "2025", title: "Regional Recognition", description: "Recognized among leading preparatory schools in the Ashanti Region." },
+  {
+    year: "2022",
+    title: "NSMQ Alumni Success",
+    description:
+      "Former pupil Nana Afia Konadu-Yiadom Boadi qualified for the National Science and Maths Quiz representing Notre Dame Girls High School — the 8th Tomhel alumna to reach NSMQ at the SHS level.",
+  },
+  {
+    year: "Today",
+    title: "A Growing Legacy",
+    description:
+      "Tomhel now serves more than 800 students from Creche through JHS, producing exceptional and world-ready graduates, and is recognized as the best private school in the Sekyere-East District.",
+  },
 ];
 
 export const admissionSteps = [
@@ -197,8 +284,8 @@ export const admissionSteps = [
 
 export const admissionFaqs = [
   {
-    question: "What age can my child start Kindergarten?",
-    answer: "Children must be at least 4 years old by September 1st of the admission year for Kindergarten 1.",
+    question: "What age can my child start at Tomhel?",
+    answer: "We admit pupils from Creche and Nursery through Junior High. Children entering Kindergarten 1 should be at least 4 years old by September 1st of the admission year.",
   },
   {
     question: "What documents are required for application?",
@@ -276,6 +363,22 @@ export const galleryCategories = [
 
 export const academicsData = [
   {
+    id: "creche",
+    title: "Creche",
+    curriculum: "Gentle early-years care with sensory play, language exposure, motor-skill development, and secure routines for toddlers.",
+    subjects: ["Early Stimulation", "Language & Songs", "Motor Skills", "Social Interaction", "Creative Play"],
+    methodology: "Small-group care, storytelling, music, guided play, and close parent communication.",
+    assessments: "Daily observation, developmental milestones, and regular parent updates.",
+  },
+  {
+    id: "nursery",
+    title: "Nursery",
+    curriculum: "Structured pre-school programme preparing children for Kindergarten with phonics awareness, numeracy basics, and social skills.",
+    subjects: ["Pre-Literacy", "Pre-Numeracy", "Creative Arts", "Physical Development", "Social Habits"],
+    methodology: "Interactive lessons, hands-on activities, circle time, and age-appropriate routines.",
+    assessments: "Continuous observation, portfolio work, and parent-teacher conferences.",
+  },
+  {
     id: "kindergarten",
     title: "Kindergarten",
     curriculum: "Play-based Ghana Early Childhood Education framework with phonics, numeracy, and social-emotional learning.",
@@ -303,13 +406,20 @@ export const academicsData = [
 
 export const fallbackNews = [
   {
-    _id: "1",
-    title: "Tomhel Students Excel at Regional Science Fair",
-    excerpt: "Our JHS team secured first place at the Ashanti Regional Science and Maths Quiz.",
+    _id: "nsmq-2022",
+    title: "Tomhel Alumna Qualifies for National Science and Maths Quiz",
+    excerpt:
+      "Management congratulates former pupil Nana Afia Konadu-Yiadom Boadi on her success in the NSMQ qualifying rounds while representing Notre Dame Girls High School.",
     category: "Achievements",
-    publishedAt: "2025-05-15",
-    slug: "science-fair-2025",
-    image: schoolImages.classroom,
+    publishedAt: "2022-04-26",
+    slug: "nsmq-alumna-2022",
+    image: schoolImages.nsmqNews,
+    body: [
+      "The Management of Tomhel Preparatory School extends warm congratulations to former pupil Nana Afia Konadu-Yiadom Boadi on her successful performance in the qualifying rounds of the National Science and Maths Quiz (NSMQ), where she represented Notre Dame Girls High School.",
+      "Nana Afia is the second student from Tomhel Preparatory School to represent Notre Dame Girls High School in the National Science and Maths Quiz. Her elder sister, Abena Gyamfuah Boadi, was the first.",
+      "She is also the eighth student from Tomhel Preparatory School to have represented their respective Senior High Schools in the National Science and Maths Quiz — a testament to the strong academic foundation built here in Effiduasi.",
+      "The school management intends to publish a comprehensive list of all former students who have competed in the NSMQ on behalf of their Senior High Schools. We wish Nana Afia Konadu-Yiadom Boadi all the best as she presses on to higher grounds. God be with her.",
+    ],
   },
   {
     _id: "2",

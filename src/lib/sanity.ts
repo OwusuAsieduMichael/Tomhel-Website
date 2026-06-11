@@ -9,6 +9,7 @@ export type NewsArticle = {
   publishedAt: string;
   slug: string;
   image?: string;
+  body?: string[];
 };
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;

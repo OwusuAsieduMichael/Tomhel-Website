@@ -4,7 +4,8 @@ import { Container, Section } from "@/components/layout/container";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
-import { coreValues, historyTimeline, leadership, schoolImages, siteConfig } from "@/lib/constants";
+import { VantageSection } from "@/components/sections/vantage-section";
+import { coreValues, historyTimeline, leadership, schoolHistory, schoolImages, siteConfig } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -30,19 +31,9 @@ export default function AboutPage() {
             <FadeIn>
               <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">Our Story</h2>
               <div className="mt-6 space-y-4 text-lg leading-relaxed text-deep">
-                <p>
-                  Tomhel Preparatory School was founded in {siteConfig.founded} with a clear vision: to provide quality
-                  education that nurtures the whole child — academically, morally, and socially.
-                </p>
-                <p>
-                  What began as a small community school in Effiduasi, with postal address {siteConfig.poBox}, has grown
-                  into one of the Ashanti Region&apos;s most respected preparatory institutions, serving students from
-                  Kindergarten through Junior High School.
-                </p>
-                <p>
-                  Today, we combine traditional values of discipline and excellence with modern teaching methods,
-                  preparing students not just for exams, but for life.
-                </p>
+                {schoolHistory.story.map((paragraph) => (
+                  <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+                ))}
               </div>
             </FadeIn>
             <FadeIn delay={0.1}>
@@ -59,6 +50,8 @@ export default function AboutPage() {
           </div>
         </Container>
       </Section>
+
+      <VantageSection />
 
       <Section surface>
         <Container>

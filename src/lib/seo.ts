@@ -7,7 +7,7 @@ export function organizationJsonLd() {
     name: siteConfig.name,
     description: siteConfig.description,
     url: siteConfig.url,
-    telephone: siteConfig.phone,
+    telephone: siteConfig.phones.map((phone) => phone.href),
     email: siteConfig.email,
     address: {
       "@type": "PostalAddress",

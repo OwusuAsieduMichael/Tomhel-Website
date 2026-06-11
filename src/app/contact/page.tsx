@@ -5,6 +5,7 @@ import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ContactForm } from "@/components/forms/contact-form";
+import { PhoneLinks } from "@/components/layout/phone-links";
 import { siteConfig } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -55,9 +56,7 @@ export default function ContactPage() {
                       <Phone className="mt-1 h-5 w-5 shrink-0 text-taim-dark" aria-hidden />
                       <div>
                         <p className="font-medium text-primary">Phone</p>
-                        <a href={`tel:${siteConfig.phoneHref}`} className="mt-1 block text-deep hover:text-accent">
-                          {siteConfig.phone}
-                        </a>
+                        <PhoneLinks className="mt-1" linkClassName="text-deep hover:text-accent" />
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
