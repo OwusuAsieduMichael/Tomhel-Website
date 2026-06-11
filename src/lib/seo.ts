@@ -11,8 +11,9 @@ export function organizationJsonLd() {
     email: siteConfig.email,
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Accra",
-      addressRegion: "Greater Accra",
+      streetAddress: siteConfig.address,
+      addressLocality: siteConfig.addressLocality,
+      addressRegion: siteConfig.addressRegion,
       addressCountry: "GH",
     },
   };

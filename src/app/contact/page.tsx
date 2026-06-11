@@ -47,11 +47,8 @@ export default function ContactPage() {
                   <Phone className="mt-1 h-5 w-5 shrink-0 text-accent" aria-hidden />
                   <div>
                     <p className="font-medium text-primary">Phone</p>
-                    <a href={`tel:${siteConfig.phone.replace(/\s/g, "")}`} className="mt-1 block text-muted hover:text-accent">
+                    <a href={`tel:${siteConfig.phoneHref}`} className="mt-1 block text-muted hover:text-accent">
                       {siteConfig.phone}
-                    </a>
-                    <a href={`tel:${siteConfig.phoneSecondary.replace(/\s/g, "")}`} className="block text-muted hover:text-accent">
-                      {siteConfig.phoneSecondary}
                     </a>
                   </div>
                 </li>
@@ -61,9 +58,6 @@ export default function ContactPage() {
                     <p className="font-medium text-primary">Email</p>
                     <a href={`mailto:${siteConfig.email}`} className="mt-1 block text-muted hover:text-accent">
                       {siteConfig.email}
-                    </a>
-                    <a href={`mailto:${siteConfig.admissionsEmail}`} className="block text-muted hover:text-accent">
-                      {siteConfig.admissionsEmail}
                     </a>
                   </div>
                 </li>
@@ -79,7 +73,7 @@ export default function ContactPage() {
               <div className="mt-10 overflow-hidden rounded-2xl border border-border">
                 <iframe
                   title="Tomhel Preparatory School location map"
-                  src="https://maps.google.com/maps?q=Accra%20Ghana&output=embed"
+                  src="https://maps.google.com/maps?q=Effiduasi%2C%20Ashanti%20Region%2C%20Ghana&output=embed"
                   className="h-64 w-full border-0 md:h-80"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"

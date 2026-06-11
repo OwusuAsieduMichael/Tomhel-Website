@@ -33,8 +33,8 @@ export default function AboutPage() {
                   nurtures the whole child — academically, morally, and socially.
                 </p>
                 <p>
-                  What began as a small community school has grown into one of Greater Accra&apos;s most respected
-                  preparatory institutions, serving students from Kindergarten through Junior High School.
+                  What began as a small community school in Effiduasi has grown into one of the Ashanti Region&apos;s most
+                  respected preparatory institutions, serving students from Kindergarten through Junior High School.
                 </p>
                 <p>
                   Today, we combine traditional values of discipline and excellence with modern learning tools like

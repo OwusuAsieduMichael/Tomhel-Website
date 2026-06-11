@@ -5,14 +5,16 @@ export const siteConfig = {
   description:
     "Quality education nurturing academic excellence, character development, leadership, creativity, and lifelong learning in Ghana.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://tomhel.edu.gh",
-  phone: "+233 24 000 0000",
-  phoneSecondary: "+233 30 000 0000",
-  email: "info@tomhel.edu.gh",
-  admissionsEmail: "admissions@tomhel.edu.gh",
-  address: "Accra, Greater Accra Region, Ghana",
+  phone: "024 424 2394",
+  phoneHref: "+233244242394",
+  email: "tomhelschool@yahoo.com",
+  admissionsEmail: "tomhelschool@yahoo.com",
+  address: "Effiduasi, Ashanti Region, Ghana",
+  addressLocality: "Effiduasi",
+  addressRegion: "Ashanti",
   officeHours: "Monday – Friday: 7:30 AM – 4:30 PM",
   social: {
-    facebook: "https://facebook.com/tomhel",
+    facebook: "https://www.facebook.com/TomhelPreparatorySchool",
     instagram: "https://instagram.com/tomhel",
     linkedin: "https://linkedin.com/company/tomhel",
   },
@@ -158,7 +160,7 @@ export const historyTimeline = [
   { year: "2016", title: "JHS Launch", description: "Junior High School program launched with first BECE cohort." },
   { year: "2019", title: "TAIM Platform", description: "Digital academic management system introduced school-wide." },
   { year: "2022", title: "Modern Campus", description: "New ICT lab, library, and upgraded facilities completed." },
-  { year: "2025", title: "Regional Recognition", description: "Recognized among leading preparatory schools in Greater Accra." },
+  { year: "2025", title: "Regional Recognition", description: "Recognized among leading preparatory schools in the Ashanti Region." },
 ];
 
 export const admissionSteps = [
@@ -273,7 +275,7 @@ export const fallbackNews = [
   {
     _id: "1",
     title: "Tomhel Students Excel at Regional Science Fair",
-    excerpt: "Our JHS team secured first place at the Greater Accra Regional Science and Maths Quiz.",
+    excerpt: "Our JHS team secured first place at the Ashanti Regional Science and Maths Quiz.",
     category: "Achievements",
     publishedAt: "2025-05-15",
     slug: "science-fair-2025",

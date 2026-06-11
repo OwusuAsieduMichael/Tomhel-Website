@@ -23,7 +23,8 @@ export const metadata: Metadata = {
   keywords: [
     "Tomhel Preparatory School",
     "Ghana school",
-    "preparatory school Accra",
+    "preparatory school Effiduasi",
+    "preparatory school Ashanti Region",
     "BECE preparation",
     "quality education Ghana",
   ],
