@@ -4,7 +4,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Gallery",
-  description: "Browse photos of Tomhel Preparatory School — campus, academics, events, sports, and graduation.",
+  description: "Browse photos of Tomhel Preparatory School: campus, academics, events, sports, and graduation.",
   path: "/gallery",
 });
 

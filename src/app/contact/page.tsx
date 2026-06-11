@@ -6,7 +6,7 @@ import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ContactForm } from "@/components/forms/contact-form";
 import { PhoneLinks } from "@/components/layout/phone-links";
-import { siteConfig } from "@/lib/constants";
+import { siteConfig, schoolImages } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -21,7 +21,8 @@ export default function ContactPage() {
       <PageHero
         eyebrow="Contact"
         title="We'd love to hear from you"
-        description="Whether you're exploring admissions, scheduling a visit, or have a question — our team is here to help."
+        description="Whether you're exploring admissions, scheduling a visit, or have a question, our team is here to help."
+        backgroundImage={schoolImages.contactHero}
       />
 
       <BelowHeroShell>
@@ -31,7 +32,7 @@ export default function ContactPage() {
               <FadeIn>
                 <div className="surface-card h-full md:p-8">
                   <h2 className="text-2xl font-bold text-primary">Send us a message</h2>
-                  <p className="mt-4 text-deep">Fill out the form and we&apos;ll respond within 1–2 business days.</p>
+                  <p className="mt-4 text-deep">Fill out the form and we&apos;ll respond within 1 to 2 business days.</p>
                   <div className="mt-8">
                     <ContactForm />
                   </div>

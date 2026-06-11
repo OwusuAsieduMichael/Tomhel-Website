@@ -6,7 +6,7 @@ import { AdmissionsCTA } from "@/components/sections/admissions-cta";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ApplicationForm } from "@/components/forms/application-form";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { admissionFaqs, admissionSteps } from "@/lib/constants";
+import { admissionFaqs, admissionSteps, schoolImages } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -19,7 +19,7 @@ export const metadata: Metadata = createPageMetadata({
 const requirements = [
   "Completed application form",
   "Birth certificate (copy)",
-  "Passport-sized photographs (2)",
+  "Passport sized photographs (2)",
   "Previous school report card (if applicable)",
   "Immunization records",
   "Parent/guardian national ID (copy)",
@@ -31,7 +31,8 @@ export default function AdmissionsPage() {
       <PageHero
         eyebrow="Admissions"
         title="Join the Tomhel family"
-        description="We welcome applications for Creche, Nursery, Kindergarten, and Junior High School. Limited spaces available — apply early to secure your place."
+        description="We welcome applications for Creche, Nursery, Kindergarten, and Junior High School. Limited spaces available, so apply early to secure your place."
+        backgroundImage={schoolImages.admissionsHero}
       />
 
       <BelowHeroShell>

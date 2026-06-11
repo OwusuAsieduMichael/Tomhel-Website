@@ -4,6 +4,7 @@ import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { NewsList } from "./news-list";
 import { getNewsArticles } from "@/lib/sanity";
+import { schoolImages } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -21,6 +22,7 @@ export default async function NewsPage() {
         eyebrow="News & Events"
         title="Stay connected with Tomhel"
         description="Latest updates, upcoming events, important announcements, and student achievements."
+        backgroundImage={schoolImages.newsHero}
       />
 
       <BelowHeroShell>

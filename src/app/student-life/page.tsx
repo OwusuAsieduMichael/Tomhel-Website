@@ -4,13 +4,14 @@ import { Container, Section } from "@/components/layout/container";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
-import { studentLifeCategories } from "@/lib/constants";
+import { SchoolVideoSection } from "@/components/sections/school-video-section";
+import { studentLifeCategories, studentLifeVideo } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Student Life",
   description:
-    "Discover vibrant student life at Tomhel — sports, clubs, competitions, excursions, and cultural activities.",
+    "Discover vibrant student life at Tomhel: sports, clubs, competitions, excursions, and cultural activities.",
   path: "/student-life",
 });
 
@@ -49,6 +50,8 @@ export default function StudentLifePage() {
           </div>
         </Container>
       </Section>
+
+      <SchoolVideoSection video={studentLifeVideo} playLabel={studentLifeVideo.playLabel} />
 
       <Section surface>
         <Container>

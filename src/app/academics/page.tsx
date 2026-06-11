@@ -10,7 +10,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = createPageMetadata({
   title: "Academics",
   description:
-    "Explore Tomhel's academic programs from Creche through Junior High School — curriculum, subjects, methodology, and assessments.",
+    "Explore Tomhel's academic programs from Creche through Junior High School: curriculum, subjects, methodology, and assessments.",
   path: "/academics",
 });
 

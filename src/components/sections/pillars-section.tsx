@@ -22,7 +22,7 @@ export function PillarsSection() {
               A foundation for lifelong success
             </h2>
             <p className="mt-4 text-lg text-deep">
-              Four pillars guide everything we do — from the classroom to the community.
+              Four pillars guide everything we do, from the classroom to the community.
             </p>
           </div>
         </FadeIn>
