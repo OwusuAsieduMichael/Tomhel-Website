@@ -1,6 +1,5 @@
-import Link from "next/link";
+import { BackLink } from "@/components/layout/back-link";
 import { Container, Section } from "@/components/layout/container";
-import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -9,9 +8,9 @@ export default function NotFound() {
         <p className="text-sm font-medium uppercase tracking-wider text-accent">404</p>
         <h1 className="mt-4 text-4xl font-bold text-primary md:text-5xl">Page not found</h1>
         <p className="mt-4 text-lg text-muted">The page you&apos;re looking for doesn&apos;t exist or has been moved.</p>
-        <Button asChild className="mt-8">
-          <Link href="/">Return Home</Link>
-        </Button>
+        <div className="mt-8 flex justify-center">
+          <BackLink href="/" label="Back to Home" />
+        </div>
       </Container>
     </Section>
   );

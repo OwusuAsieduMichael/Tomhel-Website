@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { BackLink } from "@/components/layout/back-link";
 import { Container, Section } from "@/components/layout/container";
 import { Badge } from "@/components/ui/badge";
 import { getNewsArticle, getNewsArticles } from "@/lib/sanity";
@@ -42,10 +41,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
   return (
     <Section className="pt-32">
       <Container className="max-w-3xl">
-        <Link href="/news" className="inline-flex items-center gap-2 text-sm text-muted hover:text-accent">
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-          Back to News
-        </Link>
+        <BackLink href="/news" label="Back to News" />
 
         <Badge className="mt-8">{article.category}</Badge>
         <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-primary md:text-4xl lg:text-5xl">

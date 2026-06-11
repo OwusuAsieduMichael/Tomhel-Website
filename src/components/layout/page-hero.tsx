@@ -1,3 +1,4 @@
+import { BackLink } from "@/components/layout/back-link";
 import { Container } from "@/components/layout/container";
 import { FadeIn } from "@/components/motion/fade-in";
 
@@ -6,9 +7,20 @@ interface PageHeroProps {
   description: string;
   eyebrow?: string;
   variant?: "default" | "taim";
+  backHref?: string;
+  backLabel?: string;
+  showBack?: boolean;
 }
 
-export function PageHero({ title, description, eyebrow, variant = "default" }: PageHeroProps) {
+export function PageHero({
+  title,
+  description,
+  eyebrow,
+  variant = "default",
+  backHref,
+  backLabel,
+  showBack = true,
+}: PageHeroProps) {
   const isTaim = variant === "taim";
 
   return (
@@ -21,6 +33,15 @@ export function PageHero({ title, description, eyebrow, variant = "default" }: P
     >
       <Container>
         <FadeIn>
+          {showBack && (
+            <div className="mb-6">
+              <BackLink
+                href={backHref}
+                label={backLabel}
+                variant={isTaim ? "taim" : "default"}
+              />
+            </div>
+          )}
           {eyebrow && (
             <p
               className={

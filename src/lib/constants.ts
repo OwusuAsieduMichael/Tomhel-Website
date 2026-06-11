@@ -14,7 +14,7 @@ export const siteConfig = {
   addressRegion: "Ashanti",
   officeHours: "Monday – Friday: 7:30 AM – 4:30 PM",
   social: {
-    facebook: "https://www.facebook.com/TomhelPreparatorySchool",
+    facebook: "https://www.facebook.com/profile.php?id=100077019686158",
     instagram: "https://instagram.com/tomhel",
     linkedin: "https://linkedin.com/company/tomhel",
   },
