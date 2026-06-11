@@ -33,6 +33,7 @@ export const siteConfig = {
 export const schoolImages = {
   logo: "/IMGG/logo.jpg",
   hero: "/IMGG/hero-background.jpg",
+  hero2: "/IMGG/HERO2.jpg",
   classroom: "/IMGG/CLASSROOM.jpg",
   ictLab: "/IMGG/ICT%20LAB.jpg",
   library: "/IMGG/LIBRARY.png",
@@ -59,6 +60,7 @@ export const schoolImages = {
 export const heroSlides = [
   { src: schoolImages.hero, alt: "Tomhel Preparatory School campus" },
   { src: schoolImages.classroom, alt: "Tomhel Preparatory School classroom learning environment" },
+  { src: schoolImages.hero2, alt: "Tomhel Preparatory School building exterior with green facade and open corridors" },
 ] as const;
 
 export const staffSection = {
