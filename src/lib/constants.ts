@@ -25,7 +25,7 @@ export const siteConfig = {
 /** Local school photos — files live in public/IMGG/ */
 export const schoolImages = {
   logo: "/IMGG/logo.jpg",
-  hero: "/IMGG/HERO1.jpg",
+  hero: "/IMGG/hero-background.jpg",
   classroom: "/IMGG/CLASSROOM.jpg",
   ictLab: "/IMGG/ICT%20LAB.jpg",
   library: "/IMGG/LIBRARY.png",
@@ -40,9 +40,17 @@ export const schoolImages = {
 
 /** Landing page hero — alternates every 8 seconds */
 export const heroSlides = [
+  { src: schoolImages.hero, alt: "Tomhel Preparatory School campus" },
   { src: schoolImages.classroom, alt: "Tomhel Preparatory School classroom learning environment" },
-  { src: "/IMGG/HERO1.jpg", alt: "Tomhel Preparatory School campus" },
 ] as const;
+
+export const staffSection = {
+  eyebrow: "Our Staff",
+  title: "Dedicated educators behind every learner",
+  description:
+    "Tomhel's teachers and support staff bring expertise, discipline, and genuine care to the classroom — guiding pupils from Kindergarten through Junior High with the same commitment to excellence that defines our school.",
+  image: schoolImages.staffTeachers,
+} as const;
 
 export const headmasterWelcome = {
   name: "Mr. Thomas Nyarko-Danquah",

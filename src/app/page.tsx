@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AdmissionsCTA } from "@/components/sections/admissions-cta";
 import { FacilitiesSection } from "@/components/sections/facilities-section";
 import { HeadmasterWelcomeSection } from "@/components/sections/headmaster-welcome-section";
+import { StaffSection } from "@/components/sections/staff-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { NewsPreview } from "@/components/sections/news-preview";
@@ -26,6 +27,7 @@ export default function HomePage() {
       <HeroSection />
       <BelowHeroShell>
       <HeadmasterWelcomeSection />
+      <StaffSection />
       <PillarsSection />
       <StatsSection />
       <ProgramsSection />
