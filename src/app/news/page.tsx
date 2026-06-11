@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { NewsList } from "./news-list";
 import { getNewsArticles } from "@/lib/sanity";
@@ -22,11 +23,13 @@ export default async function NewsPage() {
         description="Latest updates, upcoming events, important announcements, and student achievements."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <NewsList articles={articles} />
         </Container>
       </Section>
+      </BelowHeroShell>
     </>
   );
 }

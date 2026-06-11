@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +20,7 @@ export function GalleryContent() {
         description="Explore our campus, classrooms, events, sports, and graduation moments through the eyes of our community."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -60,6 +62,7 @@ export function GalleryContent() {
           </Tabs>
         </Container>
       </Section>
+      </BelowHeroShell>
     </>
   );
 }

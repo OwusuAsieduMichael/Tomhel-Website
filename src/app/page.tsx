@@ -3,6 +3,7 @@ import { AdmissionsCTA } from "@/components/sections/admissions-cta";
 import { FacilitiesSection } from "@/components/sections/facilities-section";
 import { HeadmasterWelcomeSection } from "@/components/sections/headmaster-welcome-section";
 import { HeroSection } from "@/components/sections/hero-section";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { NewsPreview } from "@/components/sections/news-preview";
 import { PillarsSection } from "@/components/sections/pillars-section";
 import { ProgramsSection } from "@/components/sections/programs-section";
@@ -24,6 +25,7 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
+      <BelowHeroShell>
       <HeadmasterWelcomeSection />
       <PillarsSection />
       <StatsSection />
@@ -33,6 +35,7 @@ export default function HomePage() {
       <TestimonialsSection />
       <NewsPreview />
       <AdmissionsCTA />
+      </BelowHeroShell>
     </>
   );
 }

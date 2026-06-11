@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ContactForm } from "@/components/forms/contact-form";
@@ -22,6 +23,7 @@ export default function ContactPage() {
         description="Whether you're exploring admissions, scheduling a visit, or have a question — our team is here to help."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <div className="grid gap-16 lg:grid-cols-2">
@@ -83,6 +85,7 @@ export default function ContactPage() {
           </div>
         </Container>
       </Section>
+      </BelowHeroShell>
     </>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { academicsData } from "@/lib/constants";
@@ -21,6 +22,7 @@ export default function AcademicsPage() {
         description="From early childhood through BECE preparation, our curriculum is designed to challenge, inspire, and prepare students for success."
       />
 
+      <BelowHeroShell>
       {academicsData.map((program, index) => (
         <Section key={program.id} id={program.id} surface={index % 2 === 1}>
           <Container>
@@ -61,6 +63,7 @@ export default function AcademicsPage() {
           </Container>
         </Section>
       ))}
+      </BelowHeroShell>
     </>
   );
 }

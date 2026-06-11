@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { AdmissionsCTA } from "@/components/sections/admissions-cta";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -33,6 +34,7 @@ export default function AdmissionsPage() {
         description="We welcome applications for Kindergarten through Junior High School. Limited spaces available — apply early to secure your place."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <FadeIn>
@@ -99,6 +101,7 @@ export default function AdmissionsPage() {
       </Section>
 
       <AdmissionsCTA />
+      </BelowHeroShell>
     </>
   );
 }

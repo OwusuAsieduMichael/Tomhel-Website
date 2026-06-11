@@ -21,7 +21,7 @@ export function Section({ children, className, id, surface }: SectionProps) {
   return (
     <section
       id={id}
-      className={cn("section-padding", surface && "bg-surface", className)}
+      className={cn("section-padding", surface && "bg-white/35", className)}
     >
       {children}
     </section>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/layout/back-link";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { Container, Section } from "@/components/layout/container";
 import { Badge } from "@/components/ui/badge";
 import { getNewsArticle, getNewsArticles } from "@/lib/sanity";
@@ -39,6 +40,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
   if (!article) notFound();
 
   return (
+    <BelowHeroShell>
     <Section className="pt-32">
       <Container className="max-w-3xl">
         <BackLink href="/news" label="Back to News" />
@@ -71,5 +73,6 @@ export default async function NewsArticlePage({ params }: PageProps) {
         </div>
       </Container>
     </Section>
+    </BelowHeroShell>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BarChart3, BookOpen, Calendar, ClipboardCheck, GraduationCap, Shield, Users } from "lucide-react";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export default function PortalPage() {
         description="Access results, attendance, BECE practice, and more through the TAIM academic management platform."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <FadeIn>
@@ -90,6 +92,7 @@ export default function PortalPage() {
           </div>
         </Container>
       </Section>
+      </BelowHeroShell>
     </>
   );
 }

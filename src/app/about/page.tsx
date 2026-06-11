@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { coreValues, historyTimeline, leadership, schoolImages } from "@/lib/constants";
@@ -22,6 +23,7 @@ export default function AboutPage() {
         description="Since 2010, Tomhel Preparatory School has been dedicated to nurturing academic excellence, character, and leadership in every student."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <div className="grid items-center gap-16 lg:grid-cols-2">
@@ -142,6 +144,7 @@ export default function AboutPage() {
           </div>
         </Container>
       </Section>
+      </BelowHeroShell>
     </>
   );
 }

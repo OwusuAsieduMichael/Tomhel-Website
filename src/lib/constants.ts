@@ -32,6 +32,7 @@ export const schoolImages = {
   hero: "/IMGG/hero-background.jpg",
   kindergarten: "/IMGG/kindergarten.jpg",
   headmaster: "/IMGG/HEADMASTER.jpg",
+  sectionBackground: "/IMGG/BACKKKOO.png",
 } as const;
 
 export const headmasterWelcome = {

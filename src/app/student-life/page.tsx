@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Container, Section } from "@/components/layout/container";
+import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { studentLifeCategories } from "@/lib/constants";
@@ -22,6 +23,7 @@ export default function StudentLifePage() {
         description="Beyond the classroom, Tomhel students discover passions, build friendships, and grow through rich extracurricular experiences."
       />
 
+      <BelowHeroShell>
       <Section>
         <Container>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -64,6 +66,7 @@ export default function StudentLifePage() {
           </FadeIn>
         </Container>
       </Section>
+      </BelowHeroShell>
     </>
   );
 }
