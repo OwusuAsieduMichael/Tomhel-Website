@@ -31,6 +31,20 @@ export const schoolImages = {
   logo: "/IMGG/logo.jpg",
   hero: "/IMGG/hero-background.jpg",
   kindergarten: "/IMGG/kindergarten.jpg",
+  headmaster: "/IMGG/HEADMASTER.jpg",
+} as const;
+
+export const headmasterWelcome = {
+  name: "Mr. Thomas Nyarko-Danquah",
+  title: "Headmaster",
+  image: schoolImages.headmaster,
+  eyebrow: "Headmaster's Welcome",
+  paragraphs: [
+    "On behalf of the Board of Governors, staff, and the entire Tomhel family, I warmly welcome you to Tomhel Preparatory School.",
+    "From our campus in Effiduasi, Ashanti Region, we are committed to providing quality education that nurtures academic excellence, moral character, and responsible leadership in every pupil entrusted to our care. Guided by our motto, \"Press On to Higher Grounds,\" we uphold discipline, integrity, and high standards in all that we do.",
+    "Whether you are considering admission for your ward, seeking to partner with our school, or returning to our community, we invite you to join us in preparing confident learners for higher grounds in education and in life.",
+  ],
+  closing: "Press On to Higher Grounds.",
 } as const;
 
 export const navigation = [
@@ -148,9 +162,9 @@ export const coreValues = [
 ];
 
 export const leadership = [
-  { name: "Rev. Dr. Thomas Helms", role: "Founder & Director", image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80" },
-  { name: "Mrs. Helena Adom", role: "Head of School", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80" },
-  { name: "Mr. Kofi Annan", role: "Academic Coordinator", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80" },
+  { name: headmasterWelcome.name, role: headmasterWelcome.title, image: headmasterWelcome.image },
+  { name: "Mrs. Helena Adom", role: "Academic Coordinator", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80" },
+  { name: "Mr. Kofi Annan", role: "Senior Teacher", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80" },
   { name: "Mrs. Ama Serwaa", role: "Student Affairs", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80" },
 ];
 

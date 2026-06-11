@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdmissionsCTA } from "@/components/sections/admissions-cta";
 import { FacilitiesSection } from "@/components/sections/facilities-section";
+import { HeadmasterWelcomeSection } from "@/components/sections/headmaster-welcome-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { NewsPreview } from "@/components/sections/news-preview";
 import { PillarsSection } from "@/components/sections/pillars-section";
@@ -23,6 +24,7 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
+      <HeadmasterWelcomeSection />
       <PillarsSection />
       <StatsSection />
       <ProgramsSection />
