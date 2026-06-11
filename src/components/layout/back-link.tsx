@@ -9,19 +9,16 @@ interface BackLinkProps {
   href?: string;
   label?: string;
   className?: string;
-  variant?: "default" | "taim";
 }
 
 export function BackLink({
   href,
   label = "Back",
   className,
-  variant = "default",
 }: BackLinkProps) {
   const router = useRouter();
   const styles = cn(
-    "inline-flex items-center gap-2 text-sm font-medium transition-colors",
-    variant === "taim" ? "text-taim-dark hover:text-taim" : "text-muted hover:text-accent",
+    "inline-flex items-center gap-2 text-sm font-medium transition-colors text-muted hover:text-accent",
     className,
   );
 

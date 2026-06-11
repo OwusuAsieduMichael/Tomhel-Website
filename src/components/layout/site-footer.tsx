@@ -81,7 +81,6 @@ export function SiteFooter() {
         <div className="flex flex-col items-center justify-between gap-4 text-sm text-white/50 md:flex-row">
           <p>&copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="/portal" className="font-medium text-taim hover:text-white">TAIM Portal</Link>
             <Link href="/admissions" className="hover:text-white">Admissions</Link>
             <Link href="/contact" className="hover:text-white">Contact</Link>
           </div>

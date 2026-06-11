@@ -82,9 +82,6 @@ export function SiteHeader() {
 
         <div className="hidden items-center gap-3 lg:flex">
           <Button variant="taim" asChild>
-            <Link href="/portal">Portal</Link>
-          </Button>
-          <Button asChild>
             <Link href="/admissions">Apply Now</Link>
           </Button>
         </div>
@@ -121,10 +118,7 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-              <Button variant="secondary" asChild className="w-full">
-                <Link href="/portal">Portal Access</Link>
-              </Button>
-              <Button asChild className="w-full">
+              <Button variant="taim" asChild className="w-full">
                 <Link href="/admissions">Apply Now</Link>
               </Button>
             </div>

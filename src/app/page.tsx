@@ -8,7 +8,6 @@ import { NewsPreview } from "@/components/sections/news-preview";
 import { PillarsSection } from "@/components/sections/pillars-section";
 import { ProgramsSection } from "@/components/sections/programs-section";
 import { StatsSection } from "@/components/sections/stats-section";
-import { TaimShowcase } from "@/components/sections/taim-showcase";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { siteConfig } from "@/lib/constants";
 
@@ -30,7 +29,6 @@ export default function HomePage() {
       <PillarsSection />
       <StatsSection />
       <ProgramsSection />
-      <TaimShowcase />
       <FacilitiesSection />
       <TestimonialsSection />
       <NewsPreview />

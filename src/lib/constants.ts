@@ -18,12 +18,6 @@ export const siteConfig = {
     instagram: "https://instagram.com/tomhel",
     linkedin: "https://linkedin.com/company/tomhel",
   },
-  portalUrl: "https://taim.tomhel.edu.gh",
-  taim: {
-    primary: "#7BC96F",
-    light: "#E8F5E9",
-    dark: "#3D8B40",
-  },
 };
 
 /** Local school photos — files live in public/IMGG/ */
@@ -75,7 +69,7 @@ export const pillars = [
   {
     title: "Modern Learning",
     description:
-      "Technology-integrated classrooms and the TAIM platform prepare students for a digital future.",
+      "Technology-integrated classrooms and modern learning resources prepare students for a digital future.",
     icon: "Laptop",
   },
   {
@@ -117,14 +111,6 @@ export const programs = [
   },
 ];
 
-export const taimFeatures = [
-  { title: "Student Portal", description: "Access assignments, timetables, and learning resources anytime." },
-  { title: "Parent Portal", description: "Monitor progress, attendance, and communicate with teachers." },
-  { title: "Attendance Tracking", description: "Real-time attendance records and automated notifications." },
-  { title: "Results Management", description: "Secure access to report cards and academic performance data." },
-  { title: "BECE Practice", description: "Interactive past questions and mock exams for JHS students." },
-];
-
 export const facilities = [
   { title: "Classrooms", image: schoolImages.hero },
   { title: "ICT Lab", image: schoolImages.kindergarten },
@@ -141,7 +127,7 @@ export const testimonials = [
   },
   {
     quote:
-      "The TAIM platform makes it easy to track my grades and prepare for BECE. I feel ready for the next chapter.",
+      "The teachers push us to do our best, and the BECE preparation here is excellent. I feel ready for the next chapter.",
     author: "Kwame Asante",
     role: "JHS Student",
   },
@@ -173,7 +159,7 @@ export const historyTimeline = [
   { year: "2010", title: "Foundation", description: "Tomhel Preparatory School was established with a vision for excellence." },
   { year: "2013", title: "Primary Expansion", description: "Added full primary program serving grades 1–6." },
   { year: "2016", title: "JHS Launch", description: "Junior High School program launched with first BECE cohort." },
-  { year: "2019", title: "TAIM Platform", description: "Digital academic management system introduced school-wide." },
+  { year: "2019", title: "ICT Integration", description: "Expanded digital learning tools and computer literacy across all grade levels." },
   { year: "2022", title: "Modern Campus", description: "New ICT lab, library, and upgraded facilities completed." },
   { year: "2025", title: "Regional Recognition", description: "Recognized among leading preparatory schools in the Ashanti Region." },
 ];
@@ -260,7 +246,7 @@ export const academicsData = [
     curriculum: "GES-aligned curriculum with enhanced STEM integration and reading comprehension focus.",
     subjects: ["English", "Mathematics", "Science", "Social Studies", "ICT", "Ghanaian Language", "RME", "Creative Arts"],
     methodology: "Differentiated instruction, project-based learning, and collaborative group work.",
-    assessments: "Continuous assessment, term examinations, and standardized progress tracking via TAIM.",
+    assessments: "Continuous assessment, term examinations, and standardized progress tracking.",
   },
   {
     id: "jhs",
@@ -268,22 +254,8 @@ export const academicsData = [
     curriculum: "Comprehensive GES JHS curriculum with intensive BECE preparation and leadership development.",
     subjects: ["English", "Mathematics", "Integrated Science", "Social Studies", "ICT", "French", "BDT", "RME"],
     methodology: "Exam-focused coaching, mock tests, peer tutoring, and research projects.",
-    assessments: "Weekly tests, term exams, BECE mock examinations, and TAIM analytics dashboard.",
+    assessments: "Weekly tests, term exams, BECE mock examinations, and detailed performance reviews.",
   },
-];
-
-export const portalRoles = [
-  { title: "Students", description: "Access assignments, results, and BECE practice.", icon: "GraduationCap" },
-  { title: "Parents", description: "Monitor attendance, fees, and academic progress.", icon: "Users" },
-  { title: "Teachers", description: "Manage classes, grades, and lesson plans.", icon: "BookOpen" },
-  { title: "Administrators", description: "School-wide analytics and system management.", icon: "Shield" },
-];
-
-export const portalFeatures = [
-  { title: "Results", description: "View report cards and performance trends." },
-  { title: "Attendance", description: "Track daily attendance records." },
-  { title: "BECE Practice", description: "Interactive past questions and mocks." },
-  { title: "Academic Calendar", description: "Term dates, holidays, and events." },
 ];
 
 export const fallbackNews = [

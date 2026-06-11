@@ -39,8 +39,8 @@ export default function AboutPage() {
                   respected preparatory institutions, serving students from Kindergarten through Junior High School.
                 </p>
                 <p>
-                  Today, we combine traditional values of discipline and excellence with modern learning tools like
-                  the TAIM platform, preparing students not just for exams, but for life.
+                  Today, we combine traditional values of discipline and excellence with modern teaching methods,
+                  preparing students not just for exams, but for life.
                 </p>
               </div>
             </FadeIn>
