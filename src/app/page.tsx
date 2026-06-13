@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdmissionsCTA } from "@/components/sections/admissions-cta";
 import { FacilitiesSection } from "@/components/sections/facilities-section";
+import { GroupPhotoSection } from "@/components/sections/group-photo-section";
 import { HeadmasterWelcomeSection } from "@/components/sections/headmaster-welcome-section";
 import { StaffSection } from "@/components/sections/staff-section";
 import { HeroSection } from "@/components/sections/hero-section";
@@ -12,7 +13,7 @@ import { ProgramsSection } from "@/components/sections/programs-section";
 import { SchoolVideoSection } from "@/components/sections/school-video-section";
 import { StatsSection } from "@/components/sections/stats-section";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
-import { siteConfig } from "@/lib/constants";
+import { kitchenStaffSection, siteConfig, transportSection } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -30,12 +31,14 @@ export default function HomePage() {
       <BelowHeroShell>
       <HeadmasterWelcomeSection />
       <StaffSection />
+      <GroupPhotoSection {...kitchenStaffSection} surface />
       <PillarsSection />
       <VantageSection />
       <StatsSection />
       <ProgramsSection />
       <SchoolVideoSection />
       <FacilitiesSection />
+      <GroupPhotoSection {...transportSection} />
       <TestimonialsSection />
       <NewsPreview />
       <AdmissionsCTA />

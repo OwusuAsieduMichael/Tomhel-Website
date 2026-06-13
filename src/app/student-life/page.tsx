@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Container, Section } from "@/components/layout/container";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
-import { PageHero } from "@/components/layout/page-hero";
+import { PageHeroCarousel } from "@/components/layout/page-hero-carousel";
 import { FadeIn } from "@/components/motion/fade-in";
 import { SchoolVideoSection } from "@/components/sections/school-video-section";
-import { studentLifeCategories, studentLifeVideo } from "@/lib/constants";
+import { GroupPhotoSection } from "@/components/sections/group-photo-section";
+import { StudentLifeCategoriesSection } from "@/components/sections/student-life-categories-section";
+import { StudentVotingSection } from "@/components/sections/student-voting-section";
+import {
+  carolsServiceVideo,
+  schoolChoirVideo,
+  studentLifeHeroSlides,
+  studentLifeVideo,
+  transportSection,
+} from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -18,45 +26,30 @@ export const metadata: Metadata = createPageMetadata({
 export default function StudentLifePage() {
   return (
     <>
-      <PageHero
+      <PageHeroCarousel
         eyebrow="Student Life"
         title="Where learning meets living"
         description="Beyond the classroom, Tomhel students discover passions, build friendships, and grow through rich extracurricular experiences."
+        backgroundSlides={studentLifeHeroSlides}
       />
 
       <BelowHeroShell>
-      <Section>
-        <Container>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {studentLifeCategories.map((category, index) => (
-              <FadeIn key={category.title} delay={index * 0.08}>
-                <article className="group surface-card overflow-hidden p-0 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.08]">
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <Image
-                      src={category.image}
-                      alt={category.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold text-primary">{category.title}</h2>
-                    <p className="mt-3 text-[15px] leading-relaxed text-deep">{category.description}</p>
-                  </div>
-                </article>
-              </FadeIn>
-            ))}
-          </div>
-        </Container>
-      </Section>
+        <StudentLifeCategoriesSection />
 
-      <SchoolVideoSection video={studentLifeVideo} playLabel={studentLifeVideo.playLabel} />
+        <StudentVotingSection surface />
 
-      <Section surface>
-        <Container>
-          <FadeIn>
-            <div className="mx-auto max-w-3xl text-center">
+        <GroupPhotoSection {...transportSection} />
+
+        <SchoolVideoSection video={carolsServiceVideo} playLabel={carolsServiceVideo.playLabel} />
+
+        <SchoolVideoSection video={schoolChoirVideo} playLabel={schoolChoirVideo.playLabel} surface />
+
+        <SchoolVideoSection video={studentLifeVideo} playLabel={studentLifeVideo.playLabel} />
+
+        <Section surface>
+          <Container>
+            <FadeIn>
+              <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">
                 A community that celebrates every talent
               </h2>
@@ -65,10 +58,10 @@ export default function StudentLifePage() {
                 compete, and contribute. Our vibrant culture builds confidence, teamwork, and a lifelong
                 love of learning.
               </p>
-            </div>
-          </FadeIn>
-        </Container>
-      </Section>
+              </div>
+            </FadeIn>
+          </Container>
+        </Section>
       </BelowHeroShell>
     </>
   );

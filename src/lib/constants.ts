@@ -39,6 +39,8 @@ export const schoolImages = {
   library: "/IMGG/LIBRARY.png",
   playground: "/IMGG/PLAYGROUND.jpg",
   schoolBus: "/IMGG/SCHOOL%20BUS.jpg",
+  kitchenStaff: "/IMGG/CHEFF.jpg",
+  transportBus: "/IMGG/BUS.jpg",
   staffTeachers: "/IMGG/STaff%20Teachers.jpg",
   headmaster: "/IMGG/HEADMASTER.jpg",
   academicCoordinator: "/IMGG/ACADEMIC%20CORDINATOR.jpg",
@@ -52,6 +54,18 @@ export const schoolImages = {
   sectionBackground: "/IMGG/BACKKKOO.png",
   schoolVideo: "/IMGG/TOMHEL.mp4",
   blackStarsVideo: "/IMGG/TOMHEL%20BLACKSTARS.mp4",
+  carolsPoster: "/IMGG/GALLERY1.jpg",
+  carolsVideo: "/IMGG/CAROLS%20SERVICE.mp4",
+  schoolChoirVideo: "/IMGG/SCHOOL%20CHOIR.mp4",
+  studentLife1: "/IMGG/STUDENT%20LIFE.jpg",
+  studentLife2: "/IMGG/STUDENT%20LIFE2.jpg",
+  studentLife3: "/IMGG/STUDENT%20LIFE3.jpg",
+  vote1: "/IMGG/VOTE1.jpg",
+  vote2: "/IMGG/VOTE2.jpg",
+  vote3: "/IMGG/VOTE3.jpg",
+  vote4: "/IMGG/VOTE4.jpg",
+  vote5: "/IMGG/VOTE5.jpg",
+  vote6: "/IMGG/VOTE6.jpg",
   /** @deprecated use playground or classroom */
   kindergarten: "/IMGG/PLAYGROUND.jpg",
 } as const;
@@ -63,12 +77,37 @@ export const heroSlides = [
   { src: schoolImages.hero2, alt: "Tomhel Preparatory School building exterior with green facade and open corridors" },
 ] as const;
 
+/** Student Life page hero — starts with STUDENT LIFE3, alternates every 8 seconds */
+export const studentLifeHeroSlides = [
+  { src: schoolImages.studentLife3, alt: "Tomhel Preparatory School student life celebration" },
+  { src: schoolImages.studentLife2, alt: "Tomhel Preparatory School student cultural activity" },
+  { src: schoolImages.studentLife1, alt: "Tomhel Preparatory School student community event" },
+] as const;
+
 export const staffSection = {
   eyebrow: "Our Staff",
   title: "Dedicated educators behind every learner",
   description:
-    "Tomhel's teachers and support staff bring expertise, discipline, and genuine care to the classroom, guiding pupils from Creche through Junior High with the same commitment to excellence that defines our school.",
+    "Tomhel's teachers and support staff bring expertise, discipline, and genuine care to the classroom, guiding pupils from Creche through Basic and Junior High with the same commitment to excellence that defines our school.",
   image: schoolImages.staffTeachers,
+} as const;
+
+export const kitchenStaffSection = {
+  eyebrow: "Kitchen & Catering",
+  title: "Dedicated cooking staff nourishing our school family",
+  description:
+    "Behind every healthy meal served at Tomhel is a committed kitchen team that prepares nutritious, hygienic food with care. From breakfast to lunch, our cooking staff support pupil wellbeing and the rhythm of daily school life.",
+  image: schoolImages.kitchenStaff,
+  imageAlt: "Tomhel Preparatory School kitchen and catering staff group photo",
+} as const;
+
+export const transportSection = {
+  eyebrow: "School Transport",
+  title: "Safe, reliable bus service for our pupils",
+  description:
+    "Tomhel provides dependable school transport to help pupils travel to and from campus safely and on time. Our bus service gives families peace of mind while keeping learners connected to everything Tomhel offers.",
+  image: schoolImages.transportBus,
+  imageAlt: "Tomhel Preparatory School bus used for pupil transportation",
 } as const;
 
 export const headmasterWelcome = {
@@ -134,7 +173,7 @@ export const schoolHistory = {
     "the Late Mrs Helena Nyarko Dankwa and her husband, Mr Thomas Nyarko Dankwa, with the support of their children and family",
   story: [
     `Tomhel Preparatory School was founded in ${siteConfig.founded} by the Late Mrs Helena Nyarko Dankwa and her husband, Mr Thomas Nyarko Dankwa, with the support of their children and family. What began as a humble beginning with just ${siteConfig.foundingEnrollment} pupils has grown into one of the most trusted names in private education in the Sekyere East District.`,
-    `From Creche through Junior High School, Tomhel now serves more than ${siteConfig.currentEnrollment} students, recognized as the best private school in the district and committed to the same values of discipline, care, and excellence that shaped our earliest classrooms in Effiduasi.`,
+    `From Creche through Basic School and Junior High, Tomhel now serves more than ${siteConfig.currentEnrollment} students, recognized as the best private school in the district and committed to the same values of discipline, care, and excellence that shaped our earliest classrooms in Effiduasi.`,
     "Today, Tomhel continues to produce exceptional, world ready young people equipped not only for examinations, but for leadership, integrity, and success beyond the school gates.",
   ],
 } as const;
@@ -173,7 +212,7 @@ export const schoolVideo = {
   eyebrow: "Campus Video",
   title: "See Tomhel in action",
   description:
-    "Take a closer look at life at Tomhel Preparatory School: our classrooms, community, and the values that guide everything we do from Creche through Junior High.",
+    "Take a closer look at life at Tomhel Preparatory School: our classrooms, community, and the values that guide everything we do from Creche through Basic and Junior High.",
   highlights: [
     "A welcoming campus built for learning from early years to BECE preparation",
     "Dedicated teachers and staff committed to discipline, care, and excellence",
@@ -198,6 +237,40 @@ export const studentLifeVideo = {
   playLabel: "Play Black Stars World Cup celebration video",
 } as const;
 
+export const carolsServiceVideo = {
+  src: schoolImages.carolsVideo,
+  poster: schoolImages.carolsPoster,
+  eyebrow: "Christmas Celebration",
+  title: "Carols Service: Nine Lessons & Carols",
+  description:
+    "Tomhel Preparatory School presents a night of Nine Lessons and Carols, a cherished Christmas tradition bringing pupils, staff, and families together in worship, music, and celebration of the birth of Christ.",
+  highlights: [
+    "Theme: Hallelujah, the Saviour is born (Luke 2:11)",
+    "A festive evening of scripture readings, carols, and school community fellowship",
+    "Held at Tomhel Main Campus with pupils and staff in celebration",
+  ],
+  caption: "Tomhel Preparatory School Carols Service",
+  playLabel: "Play Carols Service video",
+  aspectClass: "aspect-[3/4] sm:aspect-[4/5]",
+  posterClass: "object-contain bg-black/[0.04]",
+} as const;
+
+export const schoolChoirVideo = {
+  src: schoolImages.schoolChoirVideo,
+  poster: schoolImages.culture,
+  eyebrow: "Music & Worship",
+  title: "Tomhel School Choir",
+  description:
+    "The Tomhel School Choir brings heart and harmony to school gatherings, chapel services, and special events. Through disciplined rehearsal and joyful performance, our choristers develop confidence, teamwork, and a lasting love of music.",
+  highlights: [
+    "Pupil voices united in worship and cultural performance",
+    "Regular rehearsals that build discipline, expression, and stage presence",
+    "A proud part of Tomhel's vibrant student life and community events",
+  ],
+  caption: "Tomhel Preparatory School Choir in performance",
+  playLabel: "Play Tomhel School Choir video",
+} as const;
+
 export const programs = [
   {
     title: "Creche",
@@ -219,6 +292,13 @@ export const programs = [
       "Play based learning that builds foundational literacy, numeracy, and social skills in a nurturing environment.",
     image: schoolImages.playground,
     href: "/academics#kindergarten",
+  },
+  {
+    title: "Basic School",
+    description:
+      "Strong GES aligned foundation in literacy, numeracy, science, and character for pupils in grades 1 to 6.",
+    image: schoolImages.classroom,
+    href: "/academics#basic",
   },
   {
     title: "Junior High School",
@@ -280,7 +360,7 @@ export const historyTimeline = [
     description:
       "Founded in October by the Late Mrs Helena Nyarko Dankwa and Mr Thomas Nyarko Dankwa, with their children and family, Tomhel opened its doors to 15 pupils in Effiduasi with a vision for quality education.",
   },
-  { year: "2013", title: "Primary Expansion", description: "Added full primary program serving grades 1 to 6." },
+  { year: "2013", title: "Basic School Expansion", description: "Added full Basic School program serving grades 1 to 6." },
   { year: "2016", title: "JHS Launch", description: "Junior High School program launched with first BECE cohort." },
   { year: "2019", title: "ICT Integration", description: "Expanded digital learning tools and computer literacy across all grade levels." },
   {
@@ -293,7 +373,7 @@ export const historyTimeline = [
     year: "Today",
     title: "A Growing Legacy",
     description:
-      "Tomhel now serves more than 800 students from Creche through JHS, producing exceptional and world ready graduates, and is recognized as the best private school in the Sekyere East District.",
+      "Tomhel now serves more than 800 students from Creche through Basic and JHS, producing exceptional and world ready graduates, and is recognized as the best private school in the Sekyere East District.",
   },
 ];
 
@@ -308,7 +388,7 @@ export const admissionSteps = [
 export const admissionFaqs = [
   {
     question: "What age can my child start at Tomhel?",
-    answer: "We admit pupils from Creche and Nursery through Junior High. Children entering Kindergarten 1 should be at least 4 years old by September 1st of the admission year.",
+    answer: "We admit pupils from Creche and Nursery through Basic School and Junior High. Children entering Kindergarten 1 should be at least 4 years old by September 1st of the admission year.",
   },
   {
     question: "What documents are required for application?",
@@ -347,14 +427,30 @@ export const studentLifeCategories = [
   {
     title: "Excursions",
     description: "Educational trips to museums, historical sites, and science centers broaden horizons.",
-    image: schoolImages.schoolBus,
+    image: schoolImages.transportBus,
   },
   {
     title: "Cultural Activities",
     description: "Traditional dance, drama, and heritage celebrations honor Ghanaian culture.",
-    image: schoolImages.staffTeachers,
+    image: schoolImages.studentLife3,
+    slides: studentLifeHeroSlides,
   },
 ];
+
+export const studentRepresentativeVoting = {
+  eyebrow: "Student Leadership",
+  title: "Annual Representative Elections",
+  description:
+    "Each year, Tomhel pupils exercise democratic leadership by electing their school representatives. Campaigns, speeches, and voting day build confidence, responsibility, and a strong pupil voice across the school community.",
+  images: [
+    { src: schoolImages.vote1, alt: "Tomhel student representative election campaign photo 1" },
+    { src: schoolImages.vote2, alt: "Tomhel student representative election campaign photo 2" },
+    { src: schoolImages.vote3, alt: "Tomhel student representative election campaign photo 3" },
+    { src: schoolImages.vote4, alt: "Tomhel student representative election campaign photo 4" },
+    { src: schoolImages.vote6, alt: "Tomhel student representative election campaign photo 6" },
+  ],
+  caption: "Snapshots from Tomhel's annual pupil representative elections.",
+} as const;
 
 export const galleryCategories = [
   {
@@ -410,9 +506,9 @@ export const academicsData = [
     assessments: "Continuous observation, portfolio assessments, and parent teacher conferences.",
   },
   {
-    id: "primary",
-    title: "Primary (Grades 1 to 6)",
-    curriculum: "GES aligned curriculum with enhanced STEM integration and reading comprehension focus.",
+    id: "basic",
+    title: "Basic School (Grades 1 to 6)",
+    curriculum: "GES aligned Basic School curriculum with enhanced STEM integration and reading comprehension focus.",
     subjects: ["English", "Mathematics", "Science", "Social Studies", "ICT", "Ghanaian Language", "RME", "Creative Arts"],
     methodology: "Differentiated instruction, project based learning, and collaborative group work.",
     assessments: "Continuous assessment, term examinations, and standardized progress tracking.",

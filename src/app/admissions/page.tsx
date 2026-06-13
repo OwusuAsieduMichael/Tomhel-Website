@@ -31,7 +31,7 @@ export default function AdmissionsPage() {
       <PageHero
         eyebrow="Admissions"
         title="Join the Tomhel family"
-        description="We welcome applications for Creche, Nursery, Kindergarten, and Junior High School. Limited spaces available, so apply early to secure your place."
+        description="We welcome applications for Creche, Nursery, Kindergarten, Basic School, and Junior High School. Limited spaces available, so apply early to secure your place."
         backgroundImage={schoolImages.admissionsHero}
       />
 

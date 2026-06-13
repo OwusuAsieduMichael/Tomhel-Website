@@ -67,7 +67,7 @@ export function ApplicationForm() {
               <SelectItem value="nursery">Nursery</SelectItem>
               <SelectItem value="kg1">Kindergarten 1</SelectItem>
               <SelectItem value="kg2">Kindergarten 2</SelectItem>
-              <SelectItem value="primary">Primary (Grades 1 to 6)</SelectItem>
+              <SelectItem value="basic">Basic School (Grades 1 to 6)</SelectItem>
               <SelectItem value="jhs1">JHS 1</SelectItem>
               <SelectItem value="jhs2">JHS 2</SelectItem>
               <SelectItem value="jhs3">JHS 3</SelectItem>

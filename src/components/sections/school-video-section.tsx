@@ -15,35 +15,42 @@ type FeaturedVideoConfig = {
   description: string;
   highlights: readonly string[];
   caption: string;
+  aspectClass?: string;
+  posterClass?: string;
 };
 
 type SchoolVideoSectionProps = {
-  video?: FeaturedVideoConfig;
+  video?: FeaturedVideoConfig & { playLabel?: string };
   playLabel?: string;
+  surface?: boolean;
 };
 
 export function SchoolVideoSection({
   video = schoolVideo,
-  playLabel = "Play Tomhel Preparatory School video",
+  playLabel,
+  surface = true,
 }: SchoolVideoSectionProps = {}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const ariaLabel = playLabel ?? ("playLabel" in video && video.playLabel ? video.playLabel : "Play video");
+  const aspectClass = video.aspectClass ?? "aspect-video";
+  const posterClass = video.posterClass ?? "object-cover";
 
   const handlePlay = async () => {
-    const video = videoRef.current;
-    if (!video) return;
+    const el = videoRef.current;
+    if (!el) return;
 
     try {
-      await video.play();
+      await el.play();
       setIsPlaying(true);
     } catch {
-      video.controls = true;
+      el.controls = true;
       setIsPlaying(true);
     }
   };
 
   return (
-    <Section surface>
+    <Section surface={surface}>
       <Container>
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <FadeIn>
@@ -63,10 +70,10 @@ export function SchoolVideoSection({
           <FadeIn delay={0.1}>
             <div className="relative mx-auto w-full max-w-2xl lg:max-w-none">
               <div className="surface-card overflow-hidden p-0 shadow-xl shadow-black/10">
-                <div className="relative aspect-video bg-primary/5">
+                <div className={cn("relative bg-primary/5", aspectClass)}>
                   <video
                     ref={videoRef}
-                    className="h-full w-full object-cover"
+                    className={cn("h-full w-full", isPlaying ? "object-cover" : posterClass)}
                     poster={video.poster}
                     controls={isPlaying}
                     preload="metadata"
@@ -87,7 +94,7 @@ export function SchoolVideoSection({
                         "absolute inset-0 flex items-center justify-center bg-primary/20 transition-colors hover:bg-primary/30",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                       )}
-                      aria-label={playLabel}
+                      aria-label={ariaLabel}
                     >
                       <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-primary shadow-lg shadow-black/20 transition-transform hover:scale-105">
                         <Play className="ml-1 h-7 w-7 fill-current" aria-hidden />
