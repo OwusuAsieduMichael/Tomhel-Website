@@ -4,7 +4,7 @@ import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { academicsData } from "@/lib/constants";
+import { academicsData, schoolImages } from "@/lib/constants";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -24,6 +24,7 @@ export default function AcademicsPage() {
         eyebrow="Academics"
         title="Rigorous programs for every learner"
         description="From Creche and Nursery through KG, Basic School, and BECE preparation, our curriculum is designed to challenge, inspire, and prepare students for success."
+        backgroundImage={schoolImages.academicHero}
       />
 
       <BelowHeroShell>

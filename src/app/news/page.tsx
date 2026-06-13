@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Container, Section } from "@/components/layout/container";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
-import { PageHero } from "@/components/layout/page-hero";
+import { PageHeroVideo } from "@/components/layout/page-hero-video";
 import { NewsList } from "./news-list";
 import { getNewsArticles } from "@/lib/sanity";
 import { schoolImages } from "@/lib/constants";
@@ -18,19 +18,19 @@ export default async function NewsPage() {
 
   return (
     <>
-      <PageHero
+      <PageHeroVideo
         eyebrow="News & Events"
         title="Stay connected with Tomhel"
         description="Latest updates, upcoming events, important announcements, and student achievements."
-        backgroundImage={schoolImages.newsHero}
+        videoSrc={schoolImages.newsVideo}
       />
 
       <BelowHeroShell>
-      <Section>
-        <Container>
-          <NewsList articles={articles} />
-        </Container>
-      </Section>
+        <Section>
+          <Container>
+            <NewsList articles={articles} />
+          </Container>
+        </Section>
       </BelowHeroShell>
     </>
   );

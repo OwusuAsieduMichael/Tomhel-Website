@@ -7,7 +7,7 @@ import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { PageHero } from "@/components/layout/page-hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { galleryCategories } from "@/lib/constants";
+import { galleryCategories, schoolImages } from "@/lib/constants";
 
 export function GalleryContent() {
   const [activeTab, setActiveTab] = useState(galleryCategories[0].id);
@@ -18,6 +18,7 @@ export function GalleryContent() {
         eyebrow="Gallery"
         title="Life at Tomhel"
         description="Explore our campus, classrooms, events, sports, and graduation moments through the eyes of our community."
+        backgroundImage={schoolImages.galleryHero}
       />
 
       <BelowHeroShell>

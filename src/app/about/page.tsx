@@ -22,6 +22,7 @@ export default function AboutPage() {
         eyebrow="About Us"
         title="A legacy of excellence in education"
         description={`Since ${siteConfig.founded}, Tomhel Preparatory School has been dedicated to nurturing academic excellence, character, and leadership in every student.`}
+        backgroundImage={schoolImages.aboutHero}
       />
 
       <BelowHeroShell>
