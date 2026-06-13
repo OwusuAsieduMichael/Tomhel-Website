@@ -3,7 +3,7 @@
 import { BackLink } from "@/components/layout/back-link";
 import { Container } from "@/components/layout/container";
 import { FadeIn } from "@/components/motion/fade-in";
-import { ImageCarousel } from "@/components/motion/image-carousel";
+import { ImageCarousel, type CarouselSlide } from "@/components/motion/image-carousel";
 
 interface PageHeroCarouselProps {
   title: string;
