@@ -131,7 +131,7 @@ export const transportSection = {
 } as const;
 
 export const headmasterWelcome = {
-  name: "Mr. Thomas Nyarko-Danquah",
+  name: "Mr. Terrence Owusu Boakye",
   title: "Headmaster",
   image: schoolImages.headmaster,
   eyebrow: "Headmaster's Welcome",

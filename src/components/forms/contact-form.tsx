@@ -2,77 +2,102 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  subject: z.string().min(3, "Subject is required"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedback";
+import { useFormSubmission } from "@/components/forms/use-form-submission";
+import { contactSchema, type ContactFormData } from "@/lib/forms/schemas";
+import { submitContact } from "@/lib/forms/submit-form";
 
 export function ContactForm() {
+  const { status, errorMessage, runSubmission, isSubmitting } = useFormSubmission();
+
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
+    formState: { errors },
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
+    defaultValues: { _honeypot: "" },
   });
 
   async function onSubmit(data: ContactFormData) {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    console.log("Contact form submitted:", data);
-    reset();
+    await runSubmission(() => submitContact(data), () => {
+      reset({ _honeypot: "" });
+    });
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input id="name" {...register("name")} aria-invalid={!!errors.name} />
-          {errors.name && <p className="text-sm text-red-600" role="alert">{errors.name.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" {...register("email")} aria-invalid={!!errors.email} />
-          {errors.email && <p className="text-sm text-red-600" role="alert">{errors.email.message}</p>}
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-6" noValidate>
+      <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden>
+        <Label htmlFor="contact-honeypot">Leave blank</Label>
+        <Input id="contact-honeypot" tabIndex={-1} autoComplete="off" {...register("_honeypot")} />
       </div>
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" type="tel" {...register("phone")} aria-invalid={!!errors.phone} />
-          {errors.phone && <p className="text-sm text-red-600" role="alert">{errors.phone.message}</p>}
+
+      <fieldset className="space-y-6" disabled={isSubmitting}>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input id="name" {...register("name")} aria-invalid={!!errors.name} />
+            {errors.name && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" {...register("email")} aria-invalid={!!errors.email} />
+            {errors.email && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input id="phone" type="tel" {...register("phone")} aria-invalid={!!errors.phone} />
+            {errors.phone && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.phone.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject</Label>
+            <Input id="subject" {...register("subject")} aria-invalid={!!errors.subject} />
+            {errors.subject && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.subject.message}
+              </p>
+            )}
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="subject">Subject</Label>
-          <Input id="subject" {...register("subject")} aria-invalid={!!errors.subject} />
-          {errors.subject && <p className="text-sm text-red-600" role="alert">{errors.subject.message}</p>}
+          <Label htmlFor="message">Message</Label>
+          <Textarea id="message" rows={5} {...register("message")} aria-invalid={!!errors.message} />
+          {errors.message && (
+            <p className="text-sm text-red-600" role="alert">
+              {errors.message.message}
+            </p>
+          )}
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="message">Message</Label>
-        <Textarea id="message" rows={5} {...register("message")} aria-invalid={!!errors.message} />
-        {errors.message && <p className="text-sm text-red-600" role="alert">{errors.message.message}</p>}
-      </div>
-      <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-        {isSubmitting ? "Sending..." : "Send Message"}
+      </fieldset>
+
+      <FormFeedback
+        status={status}
+        successMessage="Thank you! Your message has been received. A confirmation email is on its way — we will respond within 1 to 2 business days."
+        errorMessage={errorMessage}
+      />
+
+      <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:w-auto">
+        <SubmitButtonContent isSubmitting={isSubmitting} idleLabel="Send Message" loadingLabel="Sending..." />
       </Button>
-      {isSubmitSuccessful && (
-        <p className="text-sm text-green-700" role="status">
-          Thank you! Your message has been received. We will respond shortly.
-        </p>
-      )}
     </form>
   );
 }

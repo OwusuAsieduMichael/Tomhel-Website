@@ -2,100 +2,189 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-const applicationSchema = z.object({
-  studentName: z.string().min(2, "Student name is required"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  gradeLevel: z.string().min(1, "Please select a grade level"),
-  parentName: z.string().min(2, "Parent/guardian name is required"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  previousSchool: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type ApplicationFormData = z.infer<typeof applicationSchema>;
+import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedback";
+import { useFormSubmission } from "@/components/forms/use-form-submission";
+import {
+  admissionSchema,
+  CLASS_OPTIONS,
+  GENDER_OPTIONS,
+  type AdmissionFormData,
+} from "@/lib/forms/schemas";
+import { submitAdmission } from "@/lib/forms/submit-form";
 
 export function ApplicationForm() {
+  const { status, errorMessage, applicationId, setApplicationId, runSubmission, isSubmitting } =
+    useFormSubmission();
+
   const {
     register,
     handleSubmit,
     setValue,
     reset,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useForm<ApplicationFormData>({
-    resolver: zodResolver(applicationSchema),
-    defaultValues: { gradeLevel: "" },
+    watch,
+    formState: { errors },
+  } = useForm<AdmissionFormData>({
+    resolver: zodResolver(admissionSchema),
+    defaultValues: {
+      gender: "",
+      classApplyingFor: "",
+      _honeypot: "",
+    },
   });
 
-  async function onSubmit(data: ApplicationFormData) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Application submitted:", data);
-    reset();
+  const gender = watch("gender");
+  const classApplyingFor = watch("classApplyingFor");
+
+  async function onSubmit(data: AdmissionFormData) {
+    await runSubmission(
+      () => submitAdmission(data),
+      (result) => {
+        if (result.applicationId) {
+          setApplicationId(result.applicationId);
+        }
+        reset({
+          gender: "",
+          classApplyingFor: "",
+          _honeypot: "",
+        });
+      }
+    );
   }
 
+  const successMessage = applicationId
+    ? `Application received! Your reference ID is ${applicationId}. A confirmation email has been sent. Our admissions team will contact you within 2 business days.`
+    : "Application received! A confirmation email has been sent. Our admissions team will contact you within 2 business days.";
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-      <fieldset className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-6" noValidate>
+      <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden>
+        <Label htmlFor="application-honeypot">Leave blank</Label>
+        <Input id="application-honeypot" tabIndex={-1} autoComplete="off" {...register("_honeypot")} />
+      </div>
+
+      <fieldset className="space-y-6" disabled={isSubmitting}>
         <legend className="text-lg font-semibold text-primary">Student Information</legend>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="studentName">Student Full Name</Label>
             <Input id="studentName" {...register("studentName")} aria-invalid={!!errors.studentName} />
-            {errors.studentName && <p className="text-sm text-red-600" role="alert">{errors.studentName.message}</p>}
+            {errors.studentName && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.studentName.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="dateOfBirth">Date of Birth</Label>
             <Input id="dateOfBirth" type="date" {...register("dateOfBirth")} aria-invalid={!!errors.dateOfBirth} />
-            {errors.dateOfBirth && <p className="text-sm text-red-600" role="alert">{errors.dateOfBirth.message}</p>}
+            {errors.dateOfBirth && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.dateOfBirth.message}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="gender">Gender</Label>
+            <Select
+              value={gender}
+              onValueChange={(value) => setValue("gender", value, { shouldValidate: true })}
+            >
+              <SelectTrigger id="gender" aria-invalid={!!errors.gender}>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.gender && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.gender.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="classApplyingFor">Class Applying For</Label>
+            <Select
+              value={classApplyingFor}
+              onValueChange={(value) => setValue("classApplyingFor", value, { shouldValidate: true })}
+            >
+              <SelectTrigger id="classApplyingFor" aria-invalid={!!errors.classApplyingFor}>
+                <SelectValue placeholder="Select class" />
+              </SelectTrigger>
+              <SelectContent>
+                {CLASS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.classApplyingFor && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.classApplyingFor.message}
+              </p>
+            )}
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="gradeLevel">Grade Level Applying For</Label>
-          <Select onValueChange={(value) => setValue("gradeLevel", value, { shouldValidate: true })}>
-            <SelectTrigger id="gradeLevel" aria-invalid={!!errors.gradeLevel}>
-              <SelectValue placeholder="Select grade level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="creche">Creche</SelectItem>
-              <SelectItem value="nursery">Nursery</SelectItem>
-              <SelectItem value="kg1">Kindergarten 1</SelectItem>
-              <SelectItem value="kg2">Kindergarten 2</SelectItem>
-              <SelectItem value="basic">Basic School (Grades 1 to 6)</SelectItem>
-              <SelectItem value="jhs1">JHS 1</SelectItem>
-              <SelectItem value="jhs2">JHS 2</SelectItem>
-              <SelectItem value="jhs3">JHS 3</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors.gradeLevel && <p className="text-sm text-red-600" role="alert">{errors.gradeLevel.message}</p>}
+          <Label htmlFor="address">Residential Address</Label>
+          <Textarea
+            id="address"
+            rows={3}
+            {...register("address")}
+            aria-invalid={!!errors.address}
+            placeholder="House number, street, area, city"
+          />
+          {errors.address && (
+            <p className="text-sm text-red-600" role="alert">
+              {errors.address.message}
+            </p>
+          )}
         </div>
       </fieldset>
 
-      <fieldset className="space-y-6">
+      <fieldset className="space-y-6" disabled={isSubmitting}>
         <legend className="text-lg font-semibold text-primary">Parent / Guardian Information</legend>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="parentName">Full Name</Label>
+            <Label htmlFor="parentName">Parent / Guardian Name</Label>
             <Input id="parentName" {...register("parentName")} aria-invalid={!!errors.parentName} />
-            {errors.parentName && <p className="text-sm text-red-600" role="alert">{errors.parentName.message}</p>}
+            {errors.parentName && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.parentName.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Parent Email</Label>
             <Input id="email" type="email" {...register("email")} aria-invalid={!!errors.email} />
-            {errors.email && <p className="text-sm text-red-600" role="alert">{errors.email.message}</p>}
+            {errors.email && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.email.message}
+              </p>
+            )}
           </div>
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">Parent Phone Number</Label>
             <Input id="phone" type="tel" {...register("phone")} aria-invalid={!!errors.phone} />
-            {errors.phone && <p className="text-sm text-red-600" role="alert">{errors.phone.message}</p>}
+            {errors.phone && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.phone.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="previousSchool">Previous School (if applicable)</Label>
@@ -104,19 +193,24 @@ export function ApplicationForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="notes">Additional Notes</Label>
-          <Textarea id="notes" rows={4} {...register("notes")} placeholder="Any special requirements or questions..." />
+          <Textarea
+            id="notes"
+            rows={4}
+            {...register("notes")}
+            placeholder="Any special requirements or questions..."
+          />
         </div>
       </fieldset>
 
-      <Button type="submit" disabled={isSubmitting} size="lg">
-        {isSubmitting ? "Submitting..." : "Submit Application"}
-      </Button>
+      <FormFeedback status={status} successMessage={successMessage} errorMessage={errorMessage} />
 
-      {isSubmitSuccessful && (
-        <p className="text-sm text-green-700" role="status">
-          Application received! Our admissions team will contact you within 2 business days.
-        </p>
-      )}
+      <Button type="submit" disabled={isSubmitting} size="lg" className="gap-2">
+        <SubmitButtonContent
+          isSubmitting={isSubmitting}
+          idleLabel="Submit Application"
+          loadingLabel="Submitting application..."
+        />
+      </Button>
     </form>
   );
 }

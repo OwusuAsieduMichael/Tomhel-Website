@@ -39,13 +39,27 @@ export function HeadmasterWelcomeSection() {
                 A formal welcome to our school community
               </h2>
 
-              <div className="mt-8 space-y-5 border-l-2 border-taim/40 pl-6 md:pl-8">
-                {headmasterWelcome.paragraphs.map((paragraph) => (
-                  <p key={paragraph.slice(0, 32)} className="text-base leading-relaxed text-deep md:text-lg">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+              <blockquote className="relative mt-8 border-l-2 border-taim/40 pl-6 md:pl-8">
+                <span
+                  className="absolute -left-1 top-0 font-serif text-5xl leading-none text-taim/35 select-none"
+                  aria-hidden="true"
+                >
+                  &ldquo;
+                </span>
+                <div className="space-y-5">
+                  {headmasterWelcome.paragraphs.map((paragraph) => (
+                    <p key={paragraph.slice(0, 32)} className="text-base leading-relaxed text-deep md:text-lg">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+                <span
+                  className="mt-2 inline-block font-serif text-5xl leading-none text-taim/35 select-none"
+                  aria-hidden="true"
+                >
+                  &rdquo;
+                </span>
+              </blockquote>
 
               <footer className="mt-10 border-t border-border pt-6">
                 <p className="text-sm font-semibold uppercase tracking-wider text-taim-dark">
