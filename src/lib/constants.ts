@@ -39,6 +39,10 @@ export const schoolImages = {
   library: "/IMGG/LIBRARY.png",
   playground: "/IMGG/PLAYGROUND.jpg",
   schoolBus: "/IMGG/SCHOOL%20BUS.jpg",
+  nurs1: "/IMGG/NURS1.jpg",
+  nurs2: "/IMGG/NURS2.jpg",
+  nurs3: "/IMGG/NURS3.jpg",
+  sports1: "/IMGG/SPORTS1.png",
   kitchenStaff: "/IMGG/CHEFF.jpg",
   transportBus: "/IMGG/BUS.jpg",
   staffTeachers: "/IMGG/STaff%20Teachers.jpg",
@@ -87,6 +91,17 @@ export const studentLifeHeroSlides = [
   { src: schoolImages.studentLife1, alt: "Tomhel Preparatory School student community event" },
 ] as const;
 
+export const culturalActivitiesSlides = [
+  ...studentLifeHeroSlides,
+  { src: schoolImages.carolsPoster, alt: "Tomhel Preparatory School Carols Service celebration poster" },
+] as const;
+
+export const sportsSlides = [
+  { src: schoolImages.playground, alt: "Tomhel Preparatory School pupils playing sports on the field" },
+  { src: schoolImages.nurs2, alt: "Tomhel Preparatory School pupils in football kits" },
+  { src: schoolImages.sports1, alt: "Tomhel Preparatory School sports activity on the playground" },
+] as const;
+
 export const staffSection = {
   eyebrow: "Our Staff",
   title: "Dedicated educators behind every learner",
@@ -102,6 +117,7 @@ export const kitchenStaffSection = {
     "Behind every healthy meal served at Tomhel is a committed kitchen team that prepares nutritious, hygienic food with care. From breakfast to lunch, our cooking staff support pupil wellbeing and the rhythm of daily school life.",
   image: schoolImages.kitchenStaff,
   imageAlt: "Tomhel Preparatory School kitchen and catering staff group photo",
+  imageFit: "contain" as const,
 } as const;
 
 export const transportSection = {
@@ -111,6 +127,7 @@ export const transportSection = {
     "Tomhel provides dependable school transport to help pupils travel to and from campus safely and on time. Our bus service gives families peace of mind while keeping learners connected to everything Tomhel offers.",
   image: schoolImages.transportBus,
   imageAlt: "Tomhel Preparatory School bus used for pupil transportation",
+  imageFit: "contain" as const,
 } as const;
 
 export const headmasterWelcome = {
@@ -286,14 +303,14 @@ export const programs = [
     title: "Nursery",
     description:
       "Structured early learning that builds confidence, communication, and readiness for Kindergarten.",
-    image: schoolImages.classroom,
+    image: schoolImages.nurs1,
     href: "/academics#nursery",
   },
   {
     title: "Kindergarten",
     description:
       "Play based learning that builds foundational literacy, numeracy, and social skills in a nurturing environment.",
-    image: schoolImages.playground,
+    image: schoolImages.nurs3,
     href: "/academics#kindergarten",
   },
   {
@@ -416,6 +433,7 @@ export const studentLifeCategories = [
     title: "Sports",
     description: "Football, athletics, volleyball, and inter school competitions build teamwork and fitness.",
     image: schoolImages.playground,
+    slides: sportsSlides,
   },
   {
     title: "Clubs",
@@ -430,13 +448,13 @@ export const studentLifeCategories = [
   {
     title: "Excursions",
     description: "Educational trips to museums, historical sites, and science centers broaden horizons.",
-    image: schoolImages.transportBus,
+    image: schoolImages.schoolBus,
   },
   {
     title: "Cultural Activities",
     description: "Traditional dance, drama, and heritage celebrations honor Ghanaian culture.",
     image: schoolImages.studentLife3,
-    slides: studentLifeHeroSlides,
+    slides: culturalActivitiesSlides,
   },
 ];
 
