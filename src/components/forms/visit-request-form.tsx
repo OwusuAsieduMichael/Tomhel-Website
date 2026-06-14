@@ -10,6 +10,7 @@ import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedb
 import { useFormSubmission } from "@/components/forms/use-form-submission";
 import { visitRequestSchema, type VisitRequestFormData } from "@/lib/forms/schemas";
 import { submitVisitRequest } from "@/lib/forms/submit-form";
+import { VISIT_SUCCESS_MESSAGE } from "@/lib/forms/messages";
 
 export function VisitRequestForm() {
   const { status, errorMessage, runSubmission, isSubmitting } = useFormSubmission();
@@ -107,7 +108,7 @@ export function VisitRequestForm() {
 
       <FormFeedback
         status={status}
-        successMessage="Visit request received! A confirmation email has been sent. Our team will contact you to confirm your appointment."
+        successMessage={VISIT_SUCCESS_MESSAGE}
         errorMessage={errorMessage}
       />
 

@@ -10,6 +10,7 @@ import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedb
 import { useFormSubmission } from "@/components/forms/use-form-submission";
 import { contactSchema, type ContactFormData } from "@/lib/forms/schemas";
 import { submitContact } from "@/lib/forms/submit-form";
+import { CONTACT_SUCCESS_MESSAGE } from "@/lib/forms/messages";
 
 export function ContactForm() {
   const { status, errorMessage, runSubmission, isSubmitting } = useFormSubmission();
@@ -91,7 +92,7 @@ export function ContactForm() {
 
       <FormFeedback
         status={status}
-        successMessage="Thank you! Your message has been received. A confirmation email is on its way — we will respond within 1 to 2 business days."
+        successMessage={CONTACT_SUCCESS_MESSAGE}
         errorMessage={errorMessage}
       />
 

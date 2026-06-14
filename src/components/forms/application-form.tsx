@@ -16,6 +16,7 @@ import {
   type AdmissionFormData,
 } from "@/lib/forms/schemas";
 import { submitAdmission } from "@/lib/forms/submit-form";
+import { getAdmissionSuccessMessage } from "@/lib/forms/messages";
 
 export function ApplicationForm() {
   const { status, errorMessage, applicationId, setApplicationId, runSubmission, isSubmitting } =
@@ -56,9 +57,7 @@ export function ApplicationForm() {
     );
   }
 
-  const successMessage = applicationId
-    ? `Application received! Your reference ID is ${applicationId}. A confirmation email has been sent. Our admissions team will contact you within 2 business days.`
-    : "Application received! A confirmation email has been sent. Our admissions team will contact you within 2 business days.";
+  const successMessage = getAdmissionSuccessMessage(applicationId);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-6" noValidate>

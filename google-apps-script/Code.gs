@@ -1,5 +1,5 @@
 /**
- * Tomhel Educational Complex — Website Forms Backend
+ * Tomhel Preparatory/JHS — Website Forms Backend
  *
  * Deploy as Web App (Execute as: Me, Access: Anyone).
  * Set Script Properties: SPREADSHEET_ID, HEADMASTER_EMAIL, API_SECRET (optional).
@@ -11,7 +11,9 @@ var SHEET_NAMES = {
   visitRequest: "VisitRequests",
 };
 
-var SCHOOL_NAME = "Tomhel Educational Complex";
+var SCHOOL_NAME = "Tomhel Preparatory/JHS";
+var SCHOOL_SLOGAN = "Press On to Higher Grounds";
+var SCHOOL_EMAIL = "tomhelschool@yahoo.com";
 
 function getConfig_() {
   var props = PropertiesService.getScriptProperties();
@@ -115,21 +117,24 @@ function submitAdmission_(payload, config) {
 
   GmailApp.sendEmail(
     payload.email,
-    SCHOOL_NAME + " Admission Application Received",
+    "Admission Application Received — " + SCHOOL_NAME,
     [
       "Dear " + payload.parentName + ",",
       "",
-      "Thank you for applying to " + SCHOOL_NAME + ".",
+      "Thank you for your interest in " + SCHOOL_NAME + ".",
       "",
-      "We have received the admission application for " + payload.studentName + ".",
+      "This email confirms that we have successfully received the admission application for " +
+        payload.studentName + ".",
       "",
-      "Application ID: " + applicationId,
-      "Submission Date: " + formattedDate,
+      "Application Reference: " + applicationId,
+      "Class Applied For: " + payload.classApplyingFor,
+      "Date Submitted: " + formattedDate,
       "",
-      "Our admissions team will review your application and contact you shortly.",
+      "Our admissions office will review your application and contact you within two business days regarding the next steps.",
       "",
-      "Press On to Higher Grounds.",
-      SCHOOL_NAME,
+      "If you have any questions in the meantime, please reply to this email or contact us at " + SCHOOL_EMAIL + ".",
+      "",
+      emailSignature_("Admissions Office"),
     ].join("\n")
   );
 
@@ -177,17 +182,21 @@ function submitMessage_(payload, config) {
 
   GmailApp.sendEmail(
     payload.email,
-    "We received your message — " + SCHOOL_NAME,
+    "Message Received — " + SCHOOL_NAME,
     [
       "Dear " + payload.name + ",",
       "",
       "Thank you for contacting " + SCHOOL_NAME + ".",
       "",
-      "We have received your message regarding \"" + payload.subject + "\" and will respond within 1 to 2 business days.",
+      "This email confirms that we have received your message regarding \"" + payload.subject + "\".",
       "",
-      "Submitted: " + formattedDate,
+      "Date Submitted: " + formattedDate,
       "",
-      SCHOOL_NAME,
+      "A member of our administration team will review your enquiry and respond within one to two business days.",
+      "",
+      "For urgent matters, you may reach us directly at " + SCHOOL_EMAIL + ".",
+      "",
+      emailSignature_("Administration Office"),
     ].join("\n")
   );
 
@@ -231,20 +240,23 @@ function submitVisitRequest_(payload, config) {
 
   GmailApp.sendEmail(
     payload.email,
-    "Visit Request Received — " + SCHOOL_NAME,
+    "Campus Visit Request Received — " + SCHOOL_NAME,
     [
       "Dear " + payload.name + ",",
       "",
-      "Thank you for requesting a visit to " + SCHOOL_NAME + ".",
+      "Thank you for your interest in visiting " + SCHOOL_NAME + ".",
       "",
-      "Preferred Date: " + payload.visitDate,
-      "Visitors: " + payload.visitorsCount,
+      "This email confirms that we have received your campus visit request with the following details:",
       "",
-      "Our team will confirm your visit shortly.",
+      "Preferred Visit Date: " + payload.visitDate,
+      "Number of Visitors: " + payload.visitorsCount,
+      "Date Submitted: " + formattedDate,
       "",
-      "Submitted: " + formattedDate,
+      "Our admissions team will contact you shortly to confirm your appointment and share any visit guidelines.",
       "",
-      SCHOOL_NAME,
+      "If you need to make changes to your request, please contact us at " + SCHOOL_EMAIL + ".",
+      "",
+      emailSignature_("Admissions Office"),
     ].join("\n")
   );
 
@@ -309,6 +321,17 @@ function jsonResponse_(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(
     ContentService.MimeType.JSON
   );
+}
+
+function emailSignature_(department) {
+  return [
+    "Warm regards,",
+    department,
+    SCHOOL_NAME,
+    SCHOOL_SLOGAN,
+    "Email: " + SCHOOL_EMAIL,
+    "Effiduasi, Ashanti Region, Ghana",
+  ].join("\n");
 }
 
 /**
