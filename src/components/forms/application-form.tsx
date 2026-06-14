@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedback";
+import { SubmitButtonContent } from "@/components/forms/form-feedback";
+import { FormSubmissionFeedback } from "@/components/forms/form-success-dialog";
 import { useFormSubmission } from "@/components/forms/use-form-submission";
 import {
   admissionSchema,
@@ -16,11 +18,32 @@ import {
   type AdmissionFormData,
 } from "@/lib/forms/schemas";
 import { submitAdmission } from "@/lib/forms/submit-form";
-import { getAdmissionSuccessMessage } from "@/lib/forms/messages";
+import { getAdmissionSuccessContent } from "@/lib/forms/messages";
+
+const EMPTY_ADMISSION_VALUES: AdmissionFormData = {
+  studentName: "",
+  dateOfBirth: "",
+  gender: "",
+  classApplyingFor: "",
+  parentName: "",
+  phone: "",
+  email: "",
+  address: "",
+  previousSchool: "",
+  notes: "",
+  _honeypot: "",
+};
 
 export function ApplicationForm() {
-  const { status, errorMessage, applicationId, setApplicationId, runSubmission, isSubmitting } =
-    useFormSubmission();
+  const {
+    status,
+    errorMessage,
+    applicationId,
+    setApplicationId,
+    resetFeedback,
+    runSubmission,
+    isSubmitting,
+  } = useFormSubmission();
 
   const {
     register,
@@ -31,33 +54,26 @@ export function ApplicationForm() {
     formState: { errors },
   } = useForm<AdmissionFormData>({
     resolver: zodResolver(admissionSchema),
-    defaultValues: {
-      gender: "",
-      classApplyingFor: "",
-      _honeypot: "",
-    },
+    defaultValues: EMPTY_ADMISSION_VALUES,
   });
 
   const gender = watch("gender");
   const classApplyingFor = watch("classApplyingFor");
 
+  const handleSuccessDismiss = useCallback(() => {
+    resetFeedback();
+    reset(EMPTY_ADMISSION_VALUES);
+  }, [reset, resetFeedback]);
+
   async function onSubmit(data: AdmissionFormData) {
-    await runSubmission(
-      () => submitAdmission(data),
-      (result) => {
-        if (result.applicationId) {
-          setApplicationId(result.applicationId);
-        }
-        reset({
-          gender: "",
-          classApplyingFor: "",
-          _honeypot: "",
-        });
+    await runSubmission(() => submitAdmission(data), (result) => {
+      if (result.applicationId) {
+        setApplicationId(result.applicationId);
       }
-    );
+    });
   }
 
-  const successMessage = getAdmissionSuccessMessage(applicationId);
+  const successContent = getAdmissionSuccessContent(applicationId);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-6" noValidate>
@@ -66,7 +82,7 @@ export function ApplicationForm() {
         <Input id="application-honeypot" tabIndex={-1} autoComplete="off" {...register("_honeypot")} />
       </div>
 
-      <fieldset className="space-y-6" disabled={isSubmitting}>
+      <fieldset className="space-y-6" disabled={isSubmitting || status === "success"}>
         <legend className="text-lg font-semibold text-primary">Student Information</legend>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
@@ -153,7 +169,7 @@ export function ApplicationForm() {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-6" disabled={isSubmitting}>
+      <fieldset className="space-y-6" disabled={isSubmitting || status === "success"}>
         <legend className="text-lg font-semibold text-primary">Parent / Guardian Information</legend>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
@@ -201,9 +217,16 @@ export function ApplicationForm() {
         </div>
       </fieldset>
 
-      <FormFeedback status={status} successMessage={successMessage} errorMessage={errorMessage} />
+      <FormSubmissionFeedback
+        status={status}
+        successTitle={successContent.title}
+        successMessage={successContent.message}
+        successDetail={successContent.detail}
+        errorMessage={errorMessage}
+        onDismiss={handleSuccessDismiss}
+      />
 
-      <Button type="submit" disabled={isSubmitting} size="lg" className="gap-2">
+      <Button type="submit" disabled={isSubmitting || status === "success"} size="lg" className="gap-2">
         <SubmitButtonContent
           isSubmitting={isSubmitting}
           idleLabel="Submit Application"

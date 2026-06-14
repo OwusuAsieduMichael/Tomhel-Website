@@ -1,19 +1,31 @@
 "use client";
 
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedback";
+import { SubmitButtonContent } from "@/components/forms/form-feedback";
+import { FormSubmissionFeedback } from "@/components/forms/form-success-dialog";
 import { useFormSubmission } from "@/components/forms/use-form-submission";
 import { visitRequestSchema, type VisitRequestFormData } from "@/lib/forms/schemas";
 import { submitVisitRequest } from "@/lib/forms/submit-form";
-import { VISIT_SUCCESS_MESSAGE } from "@/lib/forms/messages";
+import { VISIT_SUCCESS_CONTENT } from "@/lib/forms/messages";
+
+const EMPTY_VISIT_VALUES: VisitRequestFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  visitDate: "",
+  visitorsCount: 1,
+  message: "",
+  _honeypot: "",
+};
 
 export function VisitRequestForm() {
-  const { status, errorMessage, runSubmission, isSubmitting } = useFormSubmission();
+  const { status, errorMessage, resetFeedback, runSubmission, isSubmitting } = useFormSubmission();
 
   const {
     register,
@@ -22,13 +34,16 @@ export function VisitRequestForm() {
     formState: { errors },
   } = useForm<VisitRequestFormData>({
     resolver: zodResolver(visitRequestSchema),
-    defaultValues: { _honeypot: "", visitorsCount: 1 },
+    defaultValues: EMPTY_VISIT_VALUES,
   });
 
+  const handleSuccessDismiss = useCallback(() => {
+    resetFeedback();
+    reset(EMPTY_VISIT_VALUES);
+  }, [reset, resetFeedback]);
+
   async function onSubmit(data: VisitRequestFormData) {
-    await runSubmission(() => submitVisitRequest(data), () => {
-      reset({ _honeypot: "", visitorsCount: 1 });
-    });
+    await runSubmission(() => submitVisitRequest(data));
   }
 
   return (
@@ -38,7 +53,7 @@ export function VisitRequestForm() {
         <Input id="visit-honeypot" tabIndex={-1} autoComplete="off" {...register("_honeypot")} />
       </div>
 
-      <fieldset className="space-y-6" disabled={isSubmitting}>
+      <fieldset className="space-y-6" disabled={isSubmitting || status === "success"}>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="visit-name">Parent Name</Label>
@@ -106,13 +121,15 @@ export function VisitRequestForm() {
         </div>
       </fieldset>
 
-      <FormFeedback
+      <FormSubmissionFeedback
         status={status}
-        successMessage={VISIT_SUCCESS_MESSAGE}
+        successTitle={VISIT_SUCCESS_CONTENT.title}
+        successMessage={VISIT_SUCCESS_CONTENT.message}
         errorMessage={errorMessage}
+        onDismiss={handleSuccessDismiss}
       />
 
-      <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:w-auto">
+      <Button type="submit" disabled={isSubmitting || status === "success"} className="w-full gap-2 sm:w-auto">
         <SubmitButtonContent
           isSubmitting={isSubmitting}
           idleLabel="Request a Visit"

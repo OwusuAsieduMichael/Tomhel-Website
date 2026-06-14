@@ -1,19 +1,30 @@
 "use client";
 
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FormFeedback, SubmitButtonContent } from "@/components/forms/form-feedback";
+import { SubmitButtonContent } from "@/components/forms/form-feedback";
+import { FormSubmissionFeedback } from "@/components/forms/form-success-dialog";
 import { useFormSubmission } from "@/components/forms/use-form-submission";
 import { contactSchema, type ContactFormData } from "@/lib/forms/schemas";
 import { submitContact } from "@/lib/forms/submit-form";
-import { CONTACT_SUCCESS_MESSAGE } from "@/lib/forms/messages";
+import { CONTACT_SUCCESS_CONTENT } from "@/lib/forms/messages";
+
+const EMPTY_CONTACT_VALUES: ContactFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  subject: "",
+  message: "",
+  _honeypot: "",
+};
 
 export function ContactForm() {
-  const { status, errorMessage, runSubmission, isSubmitting } = useFormSubmission();
+  const { status, errorMessage, resetFeedback, runSubmission, isSubmitting } = useFormSubmission();
 
   const {
     register,
@@ -22,13 +33,16 @@ export function ContactForm() {
     formState: { errors },
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
-    defaultValues: { _honeypot: "" },
+    defaultValues: EMPTY_CONTACT_VALUES,
   });
 
+  const handleSuccessDismiss = useCallback(() => {
+    resetFeedback();
+    reset(EMPTY_CONTACT_VALUES);
+  }, [reset, resetFeedback]);
+
   async function onSubmit(data: ContactFormData) {
-    await runSubmission(() => submitContact(data), () => {
-      reset({ _honeypot: "" });
-    });
+    await runSubmission(() => submitContact(data));
   }
 
   return (
@@ -38,7 +52,7 @@ export function ContactForm() {
         <Input id="contact-honeypot" tabIndex={-1} autoComplete="off" {...register("_honeypot")} />
       </div>
 
-      <fieldset className="space-y-6" disabled={isSubmitting}>
+      <fieldset className="space-y-6" disabled={isSubmitting || status === "success"}>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
@@ -90,13 +104,15 @@ export function ContactForm() {
         </div>
       </fieldset>
 
-      <FormFeedback
+      <FormSubmissionFeedback
         status={status}
-        successMessage={CONTACT_SUCCESS_MESSAGE}
+        successTitle={CONTACT_SUCCESS_CONTENT.title}
+        successMessage={CONTACT_SUCCESS_CONTENT.message}
         errorMessage={errorMessage}
+        onDismiss={handleSuccessDismiss}
       />
 
-      <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:w-auto">
+      <Button type="submit" disabled={isSubmitting || status === "success"} className="w-full gap-2 sm:w-auto">
         <SubmitButtonContent isSubmitting={isSubmitting} idleLabel="Send Message" loadingLabel="Sending..." />
       </Button>
     </form>
