@@ -38,3 +38,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# BECE Prep local demo data (used when PREP_GAS_URL is not set)
+/.prep-local/
+
+# Licensed past-paper sources and converted papers (never commit: the repo is public)
+/private/

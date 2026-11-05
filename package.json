@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint --dir src --dir scripts --dir tests",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prep:setup": "tsx scripts/setup-sheets.ts",
+    "prep:seed": "tsx scripts/seed.ts",
+    "prep:import": "tsx scripts/import-papers.ts",
+    "pasco:objectives": "tsx scripts/pasco/extract-objectives.ts",
+    "prep:bootstrap": "tsx scripts/bootstrap.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -28,6 +36,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.1",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.2.0",
     "zod": "^3.24.3"
   },
@@ -37,10 +46,14 @@
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "dotenv": "^18.0.9",
     "eslint": "^9.25.1",
     "eslint-config-next": "^15.3.1",
+    "pdfjs-dist": "^4.10.38",
     "tailwindcss": "^4.1.4",
-    "typescript": "^5.8.3"
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.3",
+    "vitest": "^5.1.0"
   },
   "optionalDependencies": {
     "@next/swc-win32-x64-msvc": "^15.5.19"
