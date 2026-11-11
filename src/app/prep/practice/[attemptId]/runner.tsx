@@ -113,7 +113,7 @@ export function Runner({ data }: { data: RunnerData }) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[15px] font-bold">
-              {paper.subjectName} {paper.year} · Paper {paper.paperNo}
+              {paper.title}
             </span>
             <span className="text-[13px] text-prep-muted">
               {objectives ? `Question ${index + 1} of ${questions.length}` : `Question ${q.numberLabel} · ${q.marks} ${q.marks === 1 ? "mark" : "marks"}`}

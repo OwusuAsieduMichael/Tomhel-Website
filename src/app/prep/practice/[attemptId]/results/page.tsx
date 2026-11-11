@@ -1,21 +1,21 @@
-import { Check, ChevronLeft, CircleAlert, Minus, UserRound } from "lucide-react";
+import { Check, ChevronLeft, CircleAlert, Lock, MessageSquareText, Minus, UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { requireRole } from "@/lib/prep/auth/current-user";
+import { fmtMarks, formatDayTime } from "@/lib/prep/format";
 import type { Highlight, PointResult } from "@/lib/prep/grading/theory";
 import { AttemptError, loadAttemptResults } from "@/lib/prep/practice/attempts";
 import { getStore } from "@/lib/prep/store";
 import { cn } from "@/lib/utils";
+import { MarkQuery } from "./mark-query";
 
 export const metadata: Metadata = { title: "Results" };
 export const dynamic = "force-dynamic";
 
 type Loaded = NonNullable<Awaited<ReturnType<typeof loadAttemptResults>>>;
 type Q = Loaded["questions"][number];
-
-const fmtMarks = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 export default async function ResultsPage({ params }: { params: Promise<{ attemptId: string }> }) {
   const user = await requireRole("student");
@@ -31,7 +31,8 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
   }
   if (!data) redirect(`/prep/practice/${attemptId}`);
 
-  const { attempt, paper, questions } = data;
+  const { attempt, paper, questions, assignment, solutionsHidden } = data;
+  const backHref = assignment ? "/prep/student/academic/exams" : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}`;
   const score = attempt.score ?? 0;
   const max = attempt.maxScore ?? 0;
   const pending = attempt.pendingMarks ?? 0;
@@ -48,18 +49,18 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col">
       <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-prep-line bg-prep-surface px-5 py-3">
         <Link
-          href={`/prep/student/subjects/${paper.subjectCode.toLowerCase()}`}
-          aria-label="Back to past papers"
+          href={backHref}
+          aria-label={assignment ? "Back to work from teachers" : "Back to past papers"}
           className="-ml-3 flex size-11 items-center justify-center rounded-xl hover:bg-prep-primary-soft"
         >
           <ChevronLeft className="size-[22px]" aria-hidden />
         </Link>
         <div className="flex flex-col gap-0.5">
           <h1 className="text-[15px] font-bold">
-            {paper.subjectName} {paper.year} · Paper {paper.paperNo} results
+            {paper.title} results
           </h1>
           <span className="text-[13px] text-prep-muted">
-            {attempt.mode === "practice" ? "Practice" : "Full paper"}
+            {assignment ? `Set by your teacher${paper.paperTitle ? ` · ${paper.paperTitle}` : ""}` : attempt.mode === "practice" ? "Practice" : "Full paper"}
             {minutes ? ` · ${minutes} min` : ""}
             {attempt.autoSubmitted ? " · submitted when time ran out" : ""}
           </span>
@@ -80,11 +81,13 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
             <span className="text-base font-bold">
               {fmtMarks(score)} of {fmtMarks(max - pending)} marks
             </span>
-            <span className="text-[13px] leading-normal text-prep-muted">
-              {objectives
-                ? `${right.length} right · ${review.length - unanswered} wrong · ${unanswered} not answered`
-                : summariseTheory(questions)}
-            </span>
+            {solutionsHidden ? null : (
+              <span className="text-[13px] leading-normal text-prep-muted">
+                {objectives
+                  ? `${right.length} right · ${review.length - unanswered} wrong · ${unanswered} not answered`
+                  : summariseTheory(questions)}
+              </span>
+            )}
             {pending ? (
               <span className="text-[13px] font-semibold text-prep-flag-ink">
                 {fmtMarks(pending)} more {pending === 1 ? "mark is" : "marks are"} with your teacher.
@@ -93,7 +96,14 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
           </div>
         </div>
 
-        {objectives ? (
+        {solutionsHidden ? (
+          <p className="flex items-start gap-2.5 rounded-xl border border-prep-line bg-prep-surface px-4 py-3.5 text-sm text-prep-muted">
+            <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
+            {solutionsHidden.until
+              ? `Your teacher will show the answers and solutions after the work closes, ${formatDayTime(solutionsHidden.until)}.`
+              : "Your teacher will show the answers and solutions when everyone has finished."}
+          </p>
+        ) : objectives ? (
           <>
             {review.length ? (
               <section aria-labelledby="review-heading" className="flex flex-col gap-2.5">
@@ -101,7 +111,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
                   TO REVIEW ({review.length})
                 </h2>
                 {review.map((q) => (
-                  <McqReview key={q.id} q={q} />
+                  <McqReview key={q.id} q={q} attemptId={attempt.id} />
                 ))}
               </section>
             ) : (
@@ -112,22 +122,19 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
                 <summary className="flex min-h-12 cursor-pointer items-center text-sm font-bold">Questions you got right ({right.length})</summary>
                 <div className="flex flex-col gap-2.5 pb-3.5">
                   {right.map((q) => (
-                    <McqReview key={q.id} q={q} />
+                    <McqReview key={q.id} q={q} attemptId={attempt.id} />
                   ))}
                 </div>
               </details>
             ) : null}
           </>
         ) : (
-          questions.map((q) => <TheoryReview key={q.id} q={q} />)
+          questions.map((q) => <TheoryReview key={q.id} q={q} attemptId={attempt.id} />)
         )}
 
         <div className="flex gap-2.5 pt-2">
-          <Link
-            href={`/prep/student/subjects/${paper.subjectCode.toLowerCase()}`}
-            className="flex h-[52px] flex-1 items-center justify-center rounded-xl border border-prep-input bg-prep-surface text-[15px] font-bold"
-          >
-            Another paper
+          <Link href={backHref} className="flex h-[52px] flex-1 items-center justify-center rounded-xl border border-prep-input bg-prep-surface text-[15px] font-bold">
+            {assignment ? "Work from teachers" : "Another paper"}
           </Link>
           <Link href="/prep/student/progress" className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
             My progress
@@ -141,13 +148,15 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
 function summariseTheory(questions: Q[]) {
   const points = questions.flatMap((q) => (q.result?.kind === "theory" && q.result.status === "marked" ? q.result.theory.points : []));
   const n = (s: PointResult["status"]) => points.filter((p) => p.status === s).length;
-  const parts = [`${n("awarded")} points awarded`];
+  const returned = questions.filter((q) => q.result?.kind === "theory" && q.result.status === "returned").length;
+  const parts = points.length || !returned ? [`${n("awarded")} points awarded`] : [];
   if (n("misspelt")) parts.push(`${n("misspelt")} misspelt`);
   if (n("missing")) parts.push(`${n("missing")} missing`);
+  if (returned) parts.push(`${returned} ${returned === 1 ? "answer" : "answers"} marked by your teacher`);
   return parts.join(", ");
 }
 
-function McqReview({ q }: { q: Q }) {
+function McqReview({ q, attemptId }: { q: Q; attemptId: string }) {
   if (q.result?.kind !== "mcq") return null;
   const { choice, correct, awarded } = q.result;
   const chosen = q.options.find((o) => o.label === choice);
@@ -171,6 +180,12 @@ function McqReview({ q }: { q: Q }) {
         </>
       )}
       {q.modelAnswer ? <p className="text-[13px] leading-normal text-prep-muted">{q.modelAnswer}</p> : null}
+      {q.result.changed ? (
+        <p className="rounded-lg bg-prep-primary-soft px-3 py-2 text-[13px]">
+          Your teacher changed this mark to {fmtMarks(q.result.awarded)}/{fmtMarks(q.result.marks)}.{q.result.changed.note ? ` ${q.result.changed.note}` : ""}
+        </p>
+      ) : null}
+      <MarkQuery attemptId={attemptId} questionId={q.id} query={q.query} />
     </article>
   );
 }
@@ -206,14 +221,15 @@ const pointStyle: Record<PointResult["status"], { Icon: typeof Check; color: str
   review: { Icon: UserRound, color: "text-prep-muted", label: "Teacher to mark" },
 };
 
-function TheoryReview({ q }: { q: Q }) {
+function TheoryReview({ q, attemptId }: { q: Q; attemptId: string }) {
   const r = q.result;
   const text = q.answer.text?.trim() ?? "";
+  const highlights = r?.kind === "theory" ? (r.status === "marked" ? r.theory.highlights : r.status === "returned" ? r.teacher.highlights : []) : [];
   return (
     <article className="flex flex-col gap-3 border-t border-prep-line pt-4 first:border-t-0 first:pt-0">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-bold">Question {q.numberLabel}</h2>
-        {r?.kind === "theory" && r.status === "marked" ? (
+        {r?.kind === "theory" && (r.status === "marked" || r.status === "returned") ? (
           <span className={cn("text-sm font-bold", r.awarded === r.marks ? "text-prep-awarded" : r.awarded ? "text-prep-flag-ink" : "text-prep-incorrect")}>
             {fmtMarks(r.awarded)}/{fmtMarks(r.marks)}
           </span>
@@ -226,11 +242,11 @@ function TheoryReview({ q }: { q: Q }) {
       <section className="flex flex-col gap-2.5">
         <h3 className="text-sm font-bold tracking-wide text-prep-muted">YOUR ANSWER</h3>
         {text ? (
-          <MarkedAnswer text={q.answer.text!} highlights={r?.kind === "theory" && r.status === "marked" ? r.theory.highlights : []} />
+          <MarkedAnswer text={q.answer.text!} highlights={highlights} />
         ) : (
           <p className="rounded-xl border border-dashed border-prep-line p-3.5 text-sm text-prep-muted">You didn&apos;t answer this question.</p>
         )}
-        {r?.kind === "theory" && r.status === "marked" && r.theory.highlights.length ? (
+        {highlights.length ? (
           <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-prep-muted">
             <span className="flex items-center gap-1.5">
               <span className="w-[18px] border-b-2 border-prep-awarded" />
@@ -240,9 +256,39 @@ function TheoryReview({ q }: { q: Q }) {
               <span className="w-[18px] border-b-[3px] border-dotted border-prep-misspelt" />
               Misspelt or incomplete
             </span>
+            {highlights.some((h) => h.kind === "incorrect") ? (
+              <span className="flex items-center gap-1.5">
+                <span className="w-[18px] border-b-2 border-prep-incorrect" />
+                Incorrect
+              </span>
+            ) : null}
           </div>
         ) : null}
       </section>
+
+      {r?.kind === "theory" && r.status === "returned" ? (
+        <section className="flex flex-col gap-2.5">
+          <h3 className="text-sm font-bold tracking-wide text-prep-muted">MARKED BY YOUR TEACHER</h3>
+          {r.teacher.note ? (
+            <p className="flex items-start gap-2.5 rounded-xl bg-prep-primary-soft px-3.5 py-3 text-sm whitespace-pre-line">
+              <MessageSquareText className="mt-0.5 size-4 shrink-0 text-prep-primary" aria-hidden />
+              {r.teacher.note}
+            </p>
+          ) : null}
+          {r.teacher.points.length ? (
+            <ul className="flex flex-col rounded-xl border border-prep-line bg-prep-surface">
+              {r.teacher.points.map((p, i) => (
+                <li key={i} className="flex justify-between gap-2.5 border-b border-[#eeece5] px-3.5 py-3 text-sm last:border-b-0">
+                  <span className="font-semibold">{p.description}</span>
+                  <span className={cn("font-bold tabular-nums", p.awarded === p.marks ? "text-prep-awarded" : p.awarded ? "text-prep-flag-ink" : "text-prep-incorrect")}>
+                    {fmtMarks(p.awarded)}/{fmtMarks(p.marks)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       {r?.kind === "theory" && r.status === "teacher" ? (
         <p className="flex items-start gap-2.5 rounded-xl bg-prep-misspelt-bg px-3.5 py-3 text-sm text-prep-flag-ink">
@@ -282,6 +328,7 @@ function TheoryReview({ q }: { q: Q }) {
           <p className="mb-3.5 text-sm leading-relaxed text-prep-muted whitespace-pre-line">{q.modelAnswer}</p>
         </details>
       ) : null}
+      {r?.kind === "theory" && r.status !== "teacher" ? <MarkQuery attemptId={attemptId} questionId={q.id} query={q.query} /> : null}
     </article>
   );
 }

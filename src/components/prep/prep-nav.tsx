@@ -18,7 +18,17 @@ const icons: Record<NavIcon, LucideIcon> = {
   library: Library,
 };
 
-export function PrepNav({ items, variant }: { items: NavItem[]; variant: "side" | "bottom" }) {
+function Badge({ n, className }: { n: number; className?: string }) {
+  if (!n) return null;
+  return (
+    <span className={cn("inline-flex min-w-5 items-center justify-center rounded-full bg-prep-primary px-1.5 text-[11px] font-bold leading-5 text-white", className)}>
+      {n > 99 ? "99+" : n}
+      <span className="sr-only"> new</span>
+    </span>
+  );
+}
+
+export function PrepNav({ items, variant, badges = {} }: { items: NavItem[]; variant: "side" | "bottom"; badges?: Record<string, number> }) {
   const pathname = usePathname();
 
   if (variant === "side") {
@@ -39,7 +49,8 @@ export function PrepNav({ items, variant }: { items: NavItem[]; variant: "side" 
                   )}
                 >
                   <Icon className="size-5" aria-hidden />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  <Badge n={badges[item.href] ?? 0} />
                 </Link>
               </li>
             );
@@ -68,7 +79,10 @@ export function PrepNav({ items, variant }: { items: NavItem[]; variant: "side" 
                   active ? "text-prep-primary" : "text-prep-muted",
                 )}
               >
-                <Icon className={cn("size-5", active && "stroke-[2.5]")} aria-hidden />
+                <span className="relative">
+                  <Icon className={cn("size-5", active && "stroke-[2.5]")} aria-hidden />
+                  <Badge n={badges[item.href] ?? 0} className="absolute -top-2 -right-3" />
+                </span>
                 <span className="text-center">{item.label}</span>
               </Link>
             </li>

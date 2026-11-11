@@ -13,7 +13,8 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numer
 export default async function ProgressPage() {
   const user = await requireRole("student");
   const attempts = await listStudentAttempts(getStore(), user.id);
-  const done = attempts.filter((a) => a.status === "submitted" && a.maxScore);
+  // Only papers with some marks given count towards the average: one still entirely with a teacher isn't 0%.
+  const done = attempts.filter((a) => a.status === "submitted" && (a.maxScore ?? 0) - (a.pendingMarks ?? 0) > 0);
   const average = done.length
     ? Math.round((done.reduce((s, a) => s + (a.score ?? 0) / Math.max(1, (a.maxScore ?? 0) - (a.pendingMarks ?? 0)), 0) / done.length) * 100)
     : null;
@@ -35,7 +36,7 @@ export default async function ProgressPage() {
             <dl className="grid grid-cols-2 gap-3">
               <PrepCard>
                 <dt className="text-sm text-prep-muted">Papers finished</dt>
-                <dd className="mt-1 text-3xl font-bold tabular-nums">{done.length}</dd>
+                <dd className="mt-1 text-3xl font-bold tabular-nums">{attempts.filter((a) => a.status === "submitted").length}</dd>
               </PrepCard>
               <PrepCard>
                 <dt className="text-sm text-prep-muted">Average score</dt>
@@ -56,7 +57,7 @@ export default async function ProgressPage() {
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="font-bold">{a.title}</span>
                       <span className="text-[13px] text-prep-muted">
-                        {dateFmt.format(a.startedAt)} · {a.mode === "practice" ? "Practice" : "Full paper"}
+                        {dateFmt.format(a.startedAt)} · {a.assigned ? "Set by your teacher" : a.mode === "practice" ? "Practice" : "Full paper"}
                         {a.pendingMarks ? " · some marks with your teacher" : ""}
                       </span>
                     </div>
@@ -69,7 +70,7 @@ export default async function ProgressPage() {
                           pct === null ? "text-prep-muted" : pct >= 70 ? "text-prep-awarded" : pct >= 40 ? "text-prep-flag-ink" : "text-prep-incorrect",
                         )}
                       >
-                        {a.score ?? 0}/{marked}
+                        {marked > 0 ? `${a.score ?? 0}/${marked}` : "Marking"}
                       </span>
                     )}
                   </Link>

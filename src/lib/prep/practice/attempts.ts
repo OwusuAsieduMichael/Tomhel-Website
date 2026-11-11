@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { markTheory, type TheoryResult } from "@/lib/prep/grading/theory";
-import { insert, newId, update, type Attempt, type RowOf, type Store } from "@/lib/prep/store";
+import { markTheory, type Highlight, type TheoryResult } from "@/lib/prep/grading/theory";
+import { insert, newId, update, type Assignment, type Attempt, type RowOf, type Store } from "@/lib/prep/store";
 
 /**
  * Students practising past papers: start (or resume) an attempt, autosave answers, submit, and mark.
@@ -22,11 +22,40 @@ export const answerEntrySchema = z.object({
 export const answersSchema = z.record(z.string().uuid(), answerEntrySchema);
 export type Answers = z.infer<typeof answersSchema>;
 
+/** A teacher's marking of one written answer (French and Twi theory, or answers the rules couldn't decide). */
+export type TeacherMark = {
+  /** One entry per marking point, in order. Empty when the question has no marking points. */
+  points: { description: string; marks: number; awarded: number }[];
+  highlights: Highlight[];
+  note: string | null;
+  markedBy: string;
+  markedAt: string;
+};
+
 export type QuestionResult =
-  | { kind: "mcq"; choice: string | null; correct: string; awarded: number; marks: number }
+  | {
+      kind: "mcq";
+      choice: string | null;
+      correct: string;
+      awarded: number;
+      marks: number;
+      /** Set when a teacher changed the mark (e.g. after a query about a wrong answer key). */
+      changed?: { note: string | null; by: string; at: string };
+    }
   | { kind: "theory"; status: "marked"; awarded: number; marks: number; theory: TheoryResult }
-  | { kind: "theory"; status: "teacher"; awarded: 0; marks: number };
+  | { kind: "theory"; status: "teacher"; awarded: 0; marks: number }
+  | { kind: "theory"; status: "returned"; awarded: number; marks: number; teacher: TeacherMark };
 export type Results = Record<string, QuestionResult>;
+
+/** Score, maximum and marks still waiting for a teacher, from an attempt's results. */
+export function totals(results: Results) {
+  const values = Object.values(results);
+  return {
+    score: values.reduce((s, r) => s + r.awarded, 0),
+    maxScore: values.reduce((s, r) => s + r.marks, 0),
+    pendingMarks: values.filter((r) => r.kind === "theory" && r.status === "teacher").reduce((s, r) => s + r.marks, 0),
+  };
+}
 
 export class AttemptError extends Error {
   constructor(message: string) {
@@ -35,22 +64,54 @@ export class AttemptError extends Error {
   }
 }
 
-const PAPER_TABLES = ["papers", "subjects", "questions", "mcqOptions", "markingPoints", "modelAnswers"] as const;
-type PaperData = { [K in (typeof PAPER_TABLES)[number]]: RowOf<K>[] };
+export const PAPER_TABLES = ["papers", "subjects", "questions", "mcqOptions", "markingPoints", "modelAnswers"] as const;
+export type PaperData = { [K in (typeof PAPER_TABLES)[number]]: RowOf<K>[] };
+
+function withAnswers(data: PaperData, q: RowOf<"questions">) {
+  return {
+    ...q,
+    options: data.mcqOptions.filter((o) => o.questionId === q.id).sort((a, b) => a.label.localeCompare(b.label)),
+    markingPoints: data.markingPoints.filter((m) => m.questionId === q.id).sort((a, b) => a.order - b.order),
+    modelAnswer: data.modelAnswers.find((m) => m.questionId === q.id)?.text ?? null,
+  };
+}
 
 /** The approved questions of a paper, in order, with their options, marking points and model answers. */
-function paperQuestions(data: PaperData, paperId: string) {
+export function paperQuestions(data: PaperData, paperId: string) {
   return data.questions
     .filter((q) => q.paperId === paperId && q.status === "approved")
     .sort((a, b) => a.position - b.position)
-    .map((q) => ({
-      ...q,
-      options: data.mcqOptions.filter((o) => o.questionId === q.id).sort((a, b) => a.label.localeCompare(b.label)),
-      markingPoints: data.markingPoints.filter((m) => m.questionId === q.id).sort((a, b) => a.order - b.order),
-      modelAnswer: data.modelAnswers.find((m) => m.questionId === q.id)?.text ?? null,
-    }));
+    .map((q) => withAnswers(data, q));
 }
 type FullQuestion = ReturnType<typeof paperQuestions>[number];
+
+/** Approved questions by ID, in the order given (a topic quiz or a teacher's pick). Missing or unapproved ones are skipped. */
+export function questionsById(data: PaperData, ids: string[]) {
+  return ids.flatMap((id) => {
+    const q = data.questions.find((x) => x.id === id && x.status === "approved");
+    return q ? [withAnswers(data, q)] : [];
+  });
+}
+
+/** The questions an attempt is made of: its own list, or else its paper. */
+export function attemptQuestions(data: PaperData, a: Pick<Attempt, "paperId" | "questionIds">) {
+  if (a.questionIds.length) return questionsById(data, a.questionIds);
+  return a.paperId ? paperQuestions(data, a.paperId) : [];
+}
+
+/** Subject, paper (if any) and a display title for an attempt. */
+export function attemptContext(data: PaperData, a: Pick<Attempt, "paperId" | "questionIds">, assignment?: Pick<Assignment, "title"> | null) {
+  const paper = a.paperId ? (data.papers.find((p) => p.id === a.paperId) ?? null) : null;
+  const subjectId = paper?.subjectId ?? data.questions.find((q) => q.id === a.questionIds[0])?.subjectId;
+  const subject = data.subjects.find((s) => s.id === subjectId) ?? null;
+  const paperTitle = paper ? `BECE ${paper.year} Paper ${paper.paperNo}` : null;
+  const title = assignment
+    ? `${subject?.name ?? ""} · ${assignment.title}`
+    : paper
+      ? `${subject?.name ?? ""} ${paper.year} · Paper ${paper.paperNo}`
+      : `${subject?.name ?? ""} quiz`;
+  return { paper, subject, paperTitle, title };
+}
 
 // ---------------------------------------------------------------------------
 // Choosing a paper
@@ -78,7 +139,7 @@ export async function getSubjectPapers(store: Store, subjectCode: string) {
 // Attempts
 // ---------------------------------------------------------------------------
 
-const isExpired = (a: Attempt, now: Date) => !!a.deadlineAt && now.getTime() > a.deadlineAt.getTime() + DEADLINE_GRACE_MS;
+export const isExpired = (a: Attempt, now: Date) => !!a.deadlineAt && now.getTime() > a.deadlineAt.getTime() + DEADLINE_GRACE_MS;
 
 /**
  * Starts an attempt, or returns the student's unfinished attempt at the same paper.
@@ -98,34 +159,61 @@ export async function startAttempt(
     throw new AttemptError("Choose a time limit between 5 minutes and 4 hours.");
   }
 
-  const open = data.attempts.find((a) => a.studentId === studentId && a.paperId === paper.id && a.status === "in_progress");
+  // Self-practice only resumes self-practice: assigned work on the same paper is a separate attempt.
+  const open = data.attempts.find((a) => a.studentId === studentId && a.paperId === paper.id && !a.assignmentId && a.status === "in_progress");
   if (open && !isExpired(open, now)) return { id: open.id, resumed: true };
-  if (open) await finish(store, data, open, true, now);
+  if (open) await finishAttempt(store, data, open, true, now);
 
   const allMcq = questions.every((q) => q.type === "mcq");
-  const attempt: Attempt = {
-    id: newId(),
+  const attempt = newAttemptRow({
     studentId,
     paperId: paper.id,
+    assignmentId: null,
     mode: allMcq ? input.mode : "full",
     timeLimitMinutes: input.timeLimitMinutes,
-    startedAt: now,
     deadlineAt: input.timeLimitMinutes ? new Date(now.getTime() + input.timeLimitMinutes * 60_000) : null,
+    maxScore: questions.reduce((s, q) => s + q.marks, 0),
+    now,
+  });
+  await store.write([insert("attempts", [attempt])]);
+  return { id: attempt.id, resumed: false };
+}
+
+
+export function newAttemptRow(input: {
+  studentId: string;
+  paperId: string | null;
+  questionIds?: string[];
+  assignmentId: string | null;
+  mode: "practice" | "full";
+  timeLimitMinutes: number | null;
+  deadlineAt: Date | null;
+  maxScore: number;
+  now: Date;
+}): Attempt {
+  return {
+    id: newId(),
+    studentId: input.studentId,
+    paperId: input.paperId,
+    questionIds: input.questionIds ?? [],
+    assignmentId: input.assignmentId,
+    mode: input.mode,
+    timeLimitMinutes: input.timeLimitMinutes,
+    startedAt: input.now,
+    deadlineAt: input.deadlineAt,
     submittedAt: null,
     autoSubmitted: false,
     status: "in_progress",
     answers: {},
     results: null,
     score: null,
-    maxScore: questions.reduce((s, q) => s + q.marks, 0),
+    maxScore: input.maxScore,
     pendingMarks: null,
-    updatedAt: now,
+    updatedAt: input.now,
   };
-  await store.write([insert("attempts", [attempt])]);
-  return { id: attempt.id, resumed: false };
 }
 
-function readAnswers(a: Attempt): Answers {
+export function readAnswers(a: Pick<Attempt, "answers">): Answers {
   const parsed = answersSchema.safeParse(a.answers ?? {});
   return parsed.success ? parsed.data : {};
 }
@@ -151,19 +239,16 @@ export function markAnswers(questions: FullQuestion[], autoMarkTheory: boolean, 
   return results;
 }
 
-async function finish(store: Store, data: PaperData, attempt: Attempt, auto: boolean, now: Date) {
-  const subject = data.subjects.find((s) => s.id === data.papers.find((p) => p.id === attempt.paperId)?.subjectId);
-  const questions = paperQuestions(data, attempt.paperId);
-  const results = markAnswers(questions, subject?.autoMarkTheory ?? true, readAnswers(attempt));
-  const values = Object.values(results);
+/** Marks and submits an attempt. `auto`: the time ran out (it is recorded as submitted at the deadline). */
+export async function finishAttempt(store: Store, data: PaperData, attempt: Attempt, auto: boolean, now: Date) {
+  const { subject } = attemptContext(data, attempt);
+  const results = markAnswers(attemptQuestions(data, attempt), subject?.autoMarkTheory ?? true, readAnswers(attempt));
   const fields = {
     status: "submitted" as const,
     submittedAt: auto && attempt.deadlineAt ? attempt.deadlineAt : now,
     autoSubmitted: auto,
     results,
-    score: values.reduce((s, r) => s + r.awarded, 0),
-    maxScore: values.reduce((s, r) => s + r.marks, 0),
-    pendingMarks: values.filter((r) => r.kind === "theory" && r.status === "teacher").reduce((s, r) => s + r.marks, 0),
+    ...totals(results),
     updatedAt: now,
   };
   await store.write([update("attempts", attempt.id, fields)]);
@@ -171,10 +256,11 @@ async function finish(store: Store, data: PaperData, attempt: Attempt, auto: boo
 }
 
 async function ownAttempt(store: Store, studentId: string, attemptId: string) {
-  const data = await store.read("attempts", ...PAPER_TABLES);
+  const data = await store.read("attempts", "assignments", ...PAPER_TABLES);
   const attempt = data.attempts.find((a) => a.id === attemptId && a.studentId === studentId);
   if (!attempt) throw new AttemptError("That attempt doesn't exist.");
-  return { data, attempt };
+  const assignment = attempt.assignmentId ? (data.assignments.find((x) => x.id === attempt.assignmentId) ?? null) : null;
+  return { data, attempt, assignment };
 }
 
 /**
@@ -187,10 +273,10 @@ export async function saveAnswers(store: Store, studentId: string, attemptId: st
   const { data, attempt } = await ownAttempt(store, studentId, attemptId);
   if (attempt.status !== "in_progress") return { status: "submitted" as const };
   if (isExpired(attempt, now)) {
-    await finish(store, data, attempt, true, now);
+    await finishAttempt(store, data, attempt, true, now);
     return { status: "submitted" as const };
   }
-  const allowed = new Set(paperQuestions(data, attempt.paperId).map((q) => q.id));
+  const allowed = new Set(attemptQuestions(data, attempt).map((q) => q.id));
   const before = readAnswers(attempt);
   const answers: Answers = {};
   for (const [id, entry] of Object.entries(parsed.data)) {
@@ -207,9 +293,9 @@ export async function submitAttempt(store: Store, studentId: string, attemptId: 
   if (raw !== undefined && !isExpired(attempt, now)) {
     await saveAnswers(store, studentId, attemptId, raw, now);
     const fresh = await ownAttempt(store, studentId, attemptId);
-    return finish(store, fresh.data, fresh.attempt, false, now);
+    return finishAttempt(store, fresh.data, fresh.attempt, false, now);
   }
-  return finish(store, data, attempt, isExpired(attempt, now), now);
+  return finishAttempt(store, data, attempt, isExpired(attempt, now), now);
 }
 
 /** What the runner needs. The answer key is only included in practice mode. */
@@ -218,11 +304,10 @@ export async function loadAttemptForRunner(store: Store, studentId: string, atte
   const data = own.data;
   let attempt = own.attempt;
   if (attempt.status === "in_progress" && isExpired(attempt, now)) {
-    attempt = await finish(store, data, attempt, true, now);
+    attempt = await finishAttempt(store, data, attempt, true, now);
   }
-  const paper = data.papers.find((p) => p.id === attempt.paperId)!;
-  const subject = data.subjects.find((s) => s.id === paper.subjectId)!;
-  const questions = paperQuestions(data, paper.id);
+  const ctx = attemptContext(data, attempt, own.assignment);
+  const questions = attemptQuestions(data, attempt);
   return {
     attempt: {
       id: attempt.id,
@@ -232,10 +317,16 @@ export async function loadAttemptForRunner(store: Store, studentId: string, atte
       timeLimitMinutes: attempt.timeLimitMinutes,
       answers: readAnswers(attempt),
     },
-    paper: { year: paper.year, paperNo: paper.paperNo, subjectName: subject.name, subjectCode: subject.code, autoMarkTheory: subject.autoMarkTheory },
-    questions: questions.map((q) => ({
+    paper: {
+      title: ctx.title,
+      subjectName: ctx.subject?.name ?? "",
+      subjectCode: ctx.subject?.code ?? "",
+      autoMarkTheory: ctx.subject?.autoMarkTheory ?? true,
+    },
+    questions: questions.map((q, i) => ({
       id: q.id,
-      numberLabel: q.numberLabel,
+      // A teacher's pick mixes papers, so number the questions in order instead of the printed labels.
+      numberLabel: attempt.questionIds.length ? String(i + 1) : q.numberLabel,
       type: q.type,
       text: q.text,
       imageUrls: q.imageUrls,
@@ -249,41 +340,68 @@ export async function loadAttemptForRunner(store: Store, studentId: string, atte
 
 export type RunnerData = Awaited<ReturnType<typeof loadAttemptForRunner>>;
 
-/** Everything the results page shows. Only for submitted attempts. */
-export async function loadAttemptResults(store: Store, studentId: string, attemptId: string) {
-  const { data, attempt } = await ownAttempt(store, studentId, attemptId);
+/**
+ * When students may see the answer key of assigned work. Self-practice always shows it.
+ * Returns null if the solutions are visible now, otherwise when they will be (null date = when the teacher releases them).
+ */
+export function solutionsHiddenUntil(a: Assignment | null | undefined, now: Date): { until: Date | null } | null {
+  if (!a || a.solutions === "after_submit") return null;
+  if (a.solutions === "after_close") return now.getTime() >= a.closesAt.getTime() ? null : { until: a.closesAt };
+  return a.solutionsReleasedAt ? null : { until: null };
+}
+
+/**
+ * Everything the results page shows. Only for submitted attempts.
+ * For assigned work whose solutions aren't released yet, only the score comes back: no answer key, no marking.
+ */
+export async function loadAttemptResults(store: Store, studentId: string, attemptId: string, now = new Date()) {
+  const { data, attempt, assignment } = await ownAttempt(store, studentId, attemptId);
   if (attempt.status !== "submitted") return null;
-  const paper = data.papers.find((p) => p.id === attempt.paperId)!;
-  const subject = data.subjects.find((s) => s.id === paper.subjectId)!;
+  const ctx = attemptContext(data, attempt, assignment);
+  const hidden = solutionsHiddenUntil(assignment, now);
   const answers = readAnswers(attempt);
   const results = (attempt.results ?? {}) as Results;
+  const { markQueries } = await store.read("markQueries");
+  const queries = markQueries.filter((m) => m.attemptId === attempt.id);
   return {
     attempt,
-    paper: { year: paper.year, paperNo: paper.paperNo, subjectName: subject.name, subjectCode: subject.code },
-    questions: paperQuestions(data, paper.id).map((q) => ({
-      id: q.id,
-      numberLabel: q.numberLabel,
-      type: q.type,
-      text: q.text,
-      marks: q.marks,
-      options: q.options.map(({ label, text, isCorrect }) => ({ label, text, isCorrect })),
-      modelAnswer: q.modelAnswer,
-      answer: answers[q.id] ?? {},
-      result: results[q.id] ?? null,
-    })),
+    paper: {
+      title: ctx.title,
+      paperTitle: ctx.paperTitle,
+      subjectName: ctx.subject?.name ?? "",
+      subjectCode: ctx.subject?.code ?? "",
+    },
+    assignment: assignment ? { id: assignment.id, title: assignment.title } : null,
+    solutionsHidden: hidden,
+    questions: (hidden ? [] : attemptQuestions(data, attempt)).map((q, i) => {
+      const query = queries.filter((m) => m.questionId === q.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+      return {
+        id: q.id,
+        numberLabel: attempt.questionIds.length ? String(i + 1) : q.numberLabel,
+        type: q.type,
+        text: q.text,
+        marks: q.marks,
+        options: q.options.map(({ label, text, isCorrect }) => ({ label, text, isCorrect })),
+        modelAnswer: q.modelAnswer,
+        answer: answers[q.id] ?? {},
+        result: results[q.id] ?? null,
+        query: query ? { status: query.status, message: query.message, reply: query.reply, createdAt: query.createdAt } : null,
+      };
+    }),
   };
 }
 
 /** A student's attempts, newest first, for the Progress page. */
 export async function listStudentAttempts(store: Store, studentId: string) {
-  const { attempts, papers, subjects } = await store.read("attempts", "papers", "subjects");
-  return attempts
+  const data = await store.read("attempts", "assignments", ...PAPER_TABLES);
+  return data.attempts
     .filter((a) => a.studentId === studentId)
     .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
     .map((a) => {
-      const paper = papers.find((p) => p.id === a.paperId);
-      const subject = subjects.find((s) => s.id === paper?.subjectId);
+      const assignment = a.assignmentId ? data.assignments.find((x) => x.id === a.assignmentId) : undefined;
+      const ctx = attemptContext(data, a, assignment);
       return {
+        assigned: !!assignment,
         id: a.id,
         status: a.status,
         mode: a.mode,
@@ -293,7 +411,7 @@ export async function listStudentAttempts(store: Store, studentId: string) {
         score: a.score,
         maxScore: a.maxScore,
         pendingMarks: a.pendingMarks,
-        title: paper && subject ? `${subject.name} ${paper.year} · Paper ${paper.paperNo}` : "Removed paper",
+        title: ctx.subject ? ctx.title : "Removed paper",
       };
     });
 }

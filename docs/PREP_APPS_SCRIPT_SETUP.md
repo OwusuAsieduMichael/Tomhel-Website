@@ -100,7 +100,10 @@ Then log in as that admin, choose a new password, and import students on the Peo
 | Papers | Past papers: subject, year, Paper 1 or 2 |
 | Questions | Question text, marks, type, draft or approved |
 | McqOptions, MarkingPoints, ModelAnswers | Answers and marking schemes for each question |
-| Attempts | Each student's practice papers: their answers, marks and timing (answers and marking are JSON in one row) |
+| Attempts | Each student's practice papers: their answers, marks and timing (answers and marking are JSON in one row). `assignmentId` is set when the attempt is work a teacher assigned |
+| Assignments | Work teachers set for classes (a past paper, a topic quiz or questions picked from the bank): open and close dates, time limit, attempts allowed, when solutions are shown, draft or published |
+| Notices | In-app messages to students: new work, reminders, marks returned, queries answered |
+| MarkQueries | Students asking a teacher to check the mark for one question, and the teacher's reply |
 | Topics | Curriculum strands used to tag questions |
 
 Row 1 of each tab is the header. Every cell is plain text. The `id` column links rows across tabs: don't edit it.

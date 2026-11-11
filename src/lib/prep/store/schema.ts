@@ -34,6 +34,14 @@ export const QUESTION_STATUSES = ["draft", "approved"] as const;
 export const STRICTNESS = ["exact", "key_term", "meaning", "rubric"] as const;
 export const ATTEMPT_MODES = ["practice", "full"] as const;
 export const ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;
+export const ASSIGNMENT_STATUSES = ["draft", "published"] as const;
+/** single = one attempt; best = several attempts while open, the best score counts. */
+export const ATTEMPT_POLICIES = ["single", "best"] as const;
+/** When students see the answer key and solutions for an assignment. */
+export const SOLUTION_POLICIES = ["after_submit", "after_close", "on_release"] as const;
+export const ASSIGNMENT_SOURCES = ["paper", "topic", "bank"] as const;
+export const QUESTION_KINDS = ["objective", "theory"] as const;
+export const QUERY_STATUSES = ["open", "answered"] as const;
 
 export const tables = {
   classes: {
@@ -134,13 +142,18 @@ export const tables = {
   attempts: {
     sheet: "Attempts",
     /**
-     * One student working through one paper. Answers and marking results are JSON in this row,
-     * so autosave is a single row update. See src/lib/prep/practice/attempts.ts for their shapes.
+     * One student working through one paper, or through a teacher's set of questions. Answers and marking
+     * results are JSON in this row, so autosave is a single row update. See src/lib/prep/practice/attempts.ts.
      */
     columns: {
       id: str,
       studentId: str,
-      paperId: str,
+      /** The past paper. Empty for a topic quiz or a teacher's own pick of questions (see questionIds). */
+      paperId: optStr,
+      /** The questions, in order, when they aren't a whole paper. Empty = every approved question of paperId. */
+      questionIds: list,
+      /** Set when the attempt is work a teacher assigned; empty for self-practice. */
+      assignmentId: optStr,
       /** practice = see the answer after each question; full = answers at the end. */
       mode: oneOf(ATTEMPT_MODES),
       timeLimitMinutes: optNum,
@@ -158,6 +171,65 @@ export const tables = {
       /** Marks still waiting for a teacher (French and Twi theory). */
       pendingMarks: optNum,
       updatedAt: date,
+    },
+  },
+  assignments: {
+    sheet: "Assignments",
+    /**
+     * Work a teacher sets for classes, open between two dates: a whole past paper, or questions chosen
+     * by topic or picked from the question bank. Attempts link back through attempts.assignmentId.
+     * See src/lib/prep/assignments.ts.
+     */
+    columns: {
+      id: str,
+      createdBy: str,
+      subjectId: str,
+      /** paper = a whole past paper; topic = questions on chosen topics; bank = questions the teacher picked. */
+      source: oneOf(ASSIGNMENT_SOURCES),
+      /** For topic and bank: objective (multiple choice) or theory (written) questions. */
+      kind: oneOf(QUESTION_KINDS),
+      /** source = paper only. */
+      paperId: optStr,
+      /** source = topic only: the topics chosen. */
+      topicIds: list,
+      /** source = topic or bank: the questions, fixed when the assignment is saved, in order. */
+      questionIds: list,
+      title: str,
+      classIds: list,
+      /** Per-student time limit. Attempts also end at closesAt, whichever comes first. */
+      timeLimitMinutes: optNum,
+      opensAt: date,
+      closesAt: date,
+      attemptPolicy: oneOf(ATTEMPT_POLICIES),
+      solutions: oneOf(SOLUTION_POLICIES),
+      /** For solutions = on_release: when the teacher released them. */
+      solutionsReleasedAt: optDate,
+      /** Last time the teacher sent a reminder to students who hadn't finished. */
+      remindedAt: optDate,
+      status: oneOf(ASSIGNMENT_STATUSES),
+      createdAt: date,
+      updatedAt: date,
+    },
+  },
+  notices: {
+    sheet: "Notices",
+    /** In-app messages to one user: new work set, a mark returned, a reminder, a query answered. */
+    columns: { id: str, userId: str, title: str, body: optStr, href: optStr, createdAt: date, readAt: optDate },
+  },
+  markQueries: {
+    sheet: "MarkQueries",
+    /** A student asking their teacher to check the mark for one question. */
+    columns: {
+      id: str,
+      attemptId: str,
+      questionId: str,
+      studentId: str,
+      message: str,
+      status: oneOf(QUERY_STATUSES),
+      reply: optStr,
+      answeredBy: optStr,
+      answeredAt: optDate,
+      createdAt: date,
     },
   },
 } as const satisfies Record<string, { sheet: string; columns: Record<string, Col> & { id: Col } }>;
@@ -192,3 +264,6 @@ export type Subject = RowOf<"subjects">;
 export type SchoolClass = RowOf<"classes">;
 export type Question = RowOf<"questions">;
 export type Attempt = RowOf<"attempts">;
+export type Assignment = RowOf<"assignments">;
+export type Notice = RowOf<"notices">;
+export type MarkQuery = RowOf<"markQueries">;

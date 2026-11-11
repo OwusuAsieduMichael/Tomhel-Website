@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { startAssignmentAttempt } from "@/lib/prep/assignments";
 import { requireRole } from "@/lib/prep/auth/current-user";
 import { AttemptError, saveAnswers, startAttempt, submitAttempt } from "@/lib/prep/practice/attempts";
 import { getStore } from "@/lib/prep/store";
@@ -25,6 +26,20 @@ export async function startAttemptAction(_prev: StartState, formData: FormData):
       mode: parsed.data.mode,
       timeLimitMinutes: parsed.data.time === "none" ? null : parsed.data.time,
     }));
+  } catch (e) {
+    if (e instanceof AttemptError) return { error: e.message };
+    throw e;
+  }
+  redirect(`/prep/practice/${id}`);
+}
+
+export async function startAssignmentAction(_prev: StartState, formData: FormData): Promise<StartState> {
+  const user = await requireRole("student");
+  const assignmentId = z.string().uuid().safeParse(formData.get("assignmentId"));
+  if (!assignmentId.success) return { error: "That work isn't set for you." };
+  let id: string;
+  try {
+    ({ id } = await startAssignmentAttempt(getStore(), user, assignmentId.data));
   } catch (e) {
     if (e instanceof AttemptError) return { error: e.message };
     throw e;

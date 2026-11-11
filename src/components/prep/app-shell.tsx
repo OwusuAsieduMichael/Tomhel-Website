@@ -11,7 +11,8 @@ import { PrepNav } from "./prep-nav";
  * Signed-in layout for every role: top bar, side nav on desktop, bottom tab bar on phones.
  * Only receives already-authorised users (the role layouts call requireRole first).
  */
-export function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
+/** `badges`: counts shown next to menu items, by href (e.g. answers waiting in the review queue). */
+export function AppShell({ user, children, badges = {} }: { user: SessionUser; children: React.ReactNode; badges?: Record<string, number> }) {
   const items = navByRole[user.role];
 
   return (
@@ -50,13 +51,13 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
       </header>
 
       <div className="mx-auto flex max-w-6xl gap-8 px-4 md:py-8">
-        <PrepNav items={items} variant="side" />
+        <PrepNav items={items} variant="side" badges={badges} />
         <main id="prep-main" className="min-w-0 flex-1 py-6 md:py-0">
           {children}
         </main>
       </div>
 
-      <PrepNav items={items} variant="bottom" />
+      <PrepNav items={items} variant="bottom" badges={badges} />
     </div>
   );
 }
