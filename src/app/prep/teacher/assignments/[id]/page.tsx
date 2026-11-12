@@ -61,14 +61,14 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
           <Link href="/prep/teacher/assignments" className="text-sm font-semibold text-prep-primary hover:underline">
-            Assignments
+            Quizzes & assignments
           </Link>
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{a.title}</h1>
             <StateBadge state={t.state} />
           </div>
           <span className="text-sm text-prep-muted">
-            {t.subject.name}
+            {a.category === "quiz" ? "Quiz" : "Assignment"} · {t.subject.name}
             {` · ${t.description}`} · {t.classes.map((c) => c.name).join(", ")} ·{" "}
             {a.timeLimitMinutes ? `${a.timeLimitMinutes} min` : "no time limit"} · {when}
           </span>

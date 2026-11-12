@@ -6,6 +6,7 @@ import type { AssignmentFormOptions } from "@/lib/prep/assignments";
 import { saveAssignmentAction, type AssignmentFormState } from "./actions";
 
 export type AssignmentDefaults = {
+  category: "assignment" | "quiz";
   id?: string;
   subjectId: string;
   source: "paper" | "topic" | "bank";
@@ -74,6 +75,7 @@ export function AssignmentForm({
   const subject = options.find((s) => s.id === subjectId) ?? options[0];
   const [paperId, setPaperId] = useState(defaults.paperId);
   const paper = subject?.papers.find((p) => p.id === paperId);
+  const [category, setCategory] = useState(defaults.category);
   const [title, setTitle] = useState(defaults.title);
   // The Type choice: a whole paper, or an objective or theory quiz drawn from topics or picked from the bank.
   const [type, setType] = useState<"paper" | "objective" | "theory">(defaults.source === "paper" ? "paper" : defaults.kind);
@@ -134,6 +136,23 @@ export function AssignmentForm({
         <FormMessage error={state.error} />
 
         <Section title="1. What to set">
+          <fieldset>
+            <legend className={label}>Set as</legend>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["assignment", "Assignment", "Students find it under Assignments"],
+                  ["quiz", "Quiz", "Students find it under Quiz"],
+                ] as const
+              ).map(([value, name, sub]) => (
+                <label key={value} className={card}>
+                  <input type="radio" name="category" value={value} checked={category === value} onChange={() => setCategory(value)} className="sr-only" />
+                  <span className="text-[15px] font-bold">{name}</span>
+                  <span className="text-[13px] text-prep-muted">{sub}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="subjectId" className={label}>
@@ -152,7 +171,7 @@ export function AssignmentForm({
               <label htmlFor="title" className={label}>
                 Title students will see
               </label>
-              <input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required placeholder="e.g. Photosynthesis practice" className={input} />
+              <input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required placeholder={category === "quiz" ? "e.g. Photosynthesis quiz" : "e.g. Week 3 assignment"} className={input} />
             </div>
           </div>
 
@@ -383,7 +402,7 @@ export function AssignmentForm({
         <div className="rounded-2xl border border-prep-line bg-prep-surface p-5">
           <h2 className="text-xs font-bold tracking-wide text-prep-muted">STUDENTS WILL SEE</h2>
           <div className="mt-3 flex flex-col gap-1 rounded-xl bg-prep-primary p-4 text-white">
-            <span className="text-xs font-semibold tracking-wide opacity-85">SET BY YOUR TEACHER</span>
+            <span className="text-xs font-semibold tracking-wide opacity-85">{category === "quiz" ? "QUIZ" : "ASSIGNMENT"} FROM YOUR TEACHER</span>
             <span className="text-[15px] font-bold">
               {subject.name} · {title || "Untitled"}
             </span>

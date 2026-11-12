@@ -31,13 +31,14 @@ export default async function EditAssignmentPage({ params }: { params: Promise<{
         <Link href={`/prep/teacher/assignments/${a.id}`} className="text-sm font-semibold text-prep-primary hover:underline">
           {a.title}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">Edit assignment</h1>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">{a.category === "quiz" ? "Edit quiz" : "Edit assignment"}</h1>
       </div>
       <AssignmentForm
         options={options}
         started={started}
         defaults={{
           id: a.id,
+          category: a.category,
           subjectId: a.subjectId,
           source: a.source,
           kind: a.kind,

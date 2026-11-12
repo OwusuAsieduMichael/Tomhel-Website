@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { academicTabs, isActive } from "@/lib/prep/nav";
 import { cn } from "@/lib/utils";
 
-/** BECE / Quiz / Exams, underlined like the design. Links (not ARIA tabs) because each one is its own page. */
+/** BECE / Quiz / Assignments, underlined like the design. Links (not ARIA tabs) because each one is its own page. */
 export function AcademicTabs({ openExams = 0 }: { openExams?: number }) {
   const pathname = usePathname();
   return (
@@ -24,7 +24,7 @@ export function AcademicTabs({ openExams = 0 }: { openExams?: number }) {
                 )}
               >
                 {tab.label}
-                {tab.label === "Exams" && openExams > 0 ? (
+                {tab.label === "Assignments" && openExams > 0 ? (
                   <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-prep-misspelt px-1.5 text-xs font-bold text-white">
                     {openExams}
                     <span className="sr-only"> open</span>

@@ -15,7 +15,7 @@ type Col =
   | { type: "list" }
   /** Any JSON value. Validate it where it is used. */
   | { type: "json" }
-  | { type: "enum"; values: readonly string[] };
+  | { type: "enum"; values: readonly string[]; default?: string };
 
 const str = { type: "string" } as const;
 const optStr = { type: "string", nullable: true } as const;
@@ -27,6 +27,8 @@ const optDate = { type: "date", nullable: true } as const;
 const list = { type: "list" } as const;
 const json = { type: "json" } as const;
 const oneOf = <const V extends readonly string[]>(values: V) => ({ type: "enum", values }) as const;
+/** An enum column added after rows exist: empty cells read as `fallback`. */
+const oneOfOr = <const V extends readonly string[]>(values: V, fallback: V[number]) => ({ type: "enum", values, default: fallback }) as const;
 
 export const ROLES = ["student", "teacher", "admin"] as const;
 export const QUESTION_TYPES = ["mcq", "short", "theory", "calculation", "essay", "diagram"] as const;
@@ -43,6 +45,8 @@ export const SOLUTION_POLICIES = ["after_submit", "after_close", "on_release", "
 export const ASSIGNMENT_SOURCES = ["paper", "topic", "bank"] as const;
 export const QUESTION_KINDS = ["objective", "theory"] as const;
 export const QUERY_STATUSES = ["open", "answered"] as const;
+/** How set work is shown to students: under Quiz or under Assignments. */
+export const WORK_CATEGORIES = ["assignment", "quiz"] as const;
 
 export const tables = {
   classes: {
@@ -184,6 +188,8 @@ export const tables = {
     columns: {
       id: str,
       createdBy: str,
+      /** Shown to students under Assignments or under Quiz. */
+      category: oneOfOr(WORK_CATEGORIES, "assignment"),
       subjectId: str,
       /** paper = a whole past paper; topic = questions on chosen topics; bank = questions the teacher picked. */
       source: oneOf(ASSIGNMENT_SOURCES),

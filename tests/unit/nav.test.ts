@@ -10,9 +10,9 @@ describe("role navigation", () => {
     }
   });
 
-  it("gives students Academic Preparation with BECE, Quiz and Exams tabs", () => {
+  it("gives students Academic Preparation with BECE, Quiz and Assignments tabs", () => {
     expect(navByRole.student.map((i) => i.label)).toContain("Academic Prep");
-    expect(academicTabs.map((t) => t.label)).toEqual(["BECE", "Quiz", "Exams"]);
+    expect(academicTabs.map((t) => t.label)).toEqual(["BECE", "Quiz", "Assignments"]);
   });
 
   it("does not show teacher or admin tools to students", () => {

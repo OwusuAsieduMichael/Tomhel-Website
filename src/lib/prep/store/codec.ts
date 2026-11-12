@@ -2,7 +2,7 @@ import { tables, type RowOf, type TableName } from "./schema";
 
 /** Converts typed rows to and from the plain-text cells stored in the sheet. */
 
-type AnyCol = { type: string; nullable?: boolean; values?: readonly string[] };
+type AnyCol = { type: string; nullable?: boolean; values?: readonly string[]; default?: string };
 const columnsOf = (t: TableName) => tables[t].columns as unknown as Record<string, AnyCol>;
 
 export class StoreDataError extends Error {
@@ -75,6 +75,8 @@ function decodeValue(table: TableName, name: string, col: AnyCol, raw: string | 
       }
     }
     case "enum":
+      // A column added later is empty on older rows: those read as the column's default.
+      if (s.trim() === "" && col.default !== undefined) return col.default;
       if (!col.values!.includes(s.trim())) throw bad();
       return s.trim();
     default:
@@ -101,6 +103,11 @@ export function decodeSheet<T extends TableName>(table: T, data: string[][]): Ro
   const index: Record<string, number> = {};
   for (const name of Object.keys(cols)) {
     const i = header.indexOf(name);
+    // A column with a default can be read before setup has added it (every row gets the default).
+    if (i === -1 && cols[name].default !== undefined) {
+      index[name] = -1;
+      continue;
+    }
     if (i === -1) throw new StoreDataError(`Sheet ${tables[table].sheet} is missing the column "${name}". Run npm run prep:setup.`);
     index[name] = i;
   }
@@ -108,7 +115,7 @@ export function decodeSheet<T extends TableName>(table: T, data: string[][]): Ro
     .filter((r) => r.some((c) => String(c).trim() !== ""))
     .map((r) => {
       const row: Record<string, unknown> = {};
-      for (const [name, col] of Object.entries(cols)) row[name] = decodeValue(table, name, col, r[index[name]]);
+      for (const [name, col] of Object.entries(cols)) row[name] = decodeValue(table, name, col, index[name] === -1 ? undefined : r[index[name]]);
       return row as RowOf<T>;
     });
 }

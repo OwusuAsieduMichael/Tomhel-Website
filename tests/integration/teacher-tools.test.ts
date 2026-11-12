@@ -1,6 +1,16 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { importPaper } from "@/lib/prep/admin/question-bank";
-import { AssignmentError, getAssignmentFormOptions, getAssignmentTracker, saveAssignment, sendReminder, startAssignmentAttempt, type AssignmentInput } from "@/lib/prep/assignments";
+import {
+  AssignmentError,
+  getAssignmentFormOptions,
+  getAssignmentTracker,
+  listAssignments,
+  listStudentAssignments,
+  saveAssignment,
+  sendReminder,
+  startAssignmentAttempt,
+  type AssignmentInput,
+} from "@/lib/prep/assignments";
 import { listNotices, markNoticesRead, unreadNoticeCount } from "@/lib/prep/notices";
 import { loadAttemptForRunner, loadAttemptResults, submitAttempt } from "@/lib/prep/practice/attempts";
 import { answerQuery, changeMark, getAttemptForTeacher, listReviewQueue, raiseQuery, returnMark, ReviewError } from "@/lib/prep/review";
@@ -122,7 +132,7 @@ describe("notices and reminders", () => {
     const before = await unreadNoticeCount(store, u("S0003").id);
     const id = await saveAssignment(store, actor("T003"), base({ source: "paper", paperId: (await store.read("papers")).papers.find((p) => p.subjectId === sci && p.year === 2024)!.id, title: "Paper practice" }), undefined, t0);
     expect(await unreadNoticeCount(store, u("S0003").id)).toBe(before + 1);
-    expect((await listNotices(store, u("S0003").id)).find((n) => n.title.endsWith("Paper practice"))).toMatchObject({ title: "New work: Integrated Science · Paper practice", href: "/prep/student/academic/exams" });
+    expect((await listNotices(store, u("S0003").id)).find((n) => n.title.endsWith("Paper practice"))).toMatchObject({ title: "New assignment: Integrated Science · Paper practice", href: "/prep/student/academic/assignments" });
     // Students in another class hear nothing.
     expect((await listNotices(store, u("S0006").id)).some((n) => n.title.includes("Paper practice"))).toBe(false);
 
@@ -219,5 +229,32 @@ describe("instant marking on set work", () => {
     const { papers } = await store.read("papers");
     const frePaper = papers.find((p) => p.subjectId === fre)!.id;
     await expect(saveAssignment(store, actor("T001"), base({ subjectId: fre, source: "paper", paperId: frePaper, solutions: "instant" }), undefined, t0)).rejects.toThrow(/objective questions only/);
+  });
+});
+
+describe("quizzes and assignments", () => {
+  it("shows a quiz under Quiz, with a quiz notice", async () => {
+    const { papers } = await store.read("papers");
+    const sciPaper = papers.find((p) => p.subjectId === sci && p.year === 2024)!.id;
+    const id = await saveAssignment(store, actor("T003"), base({ category: "quiz", source: "paper", paperId: sciPaper, title: "Friday quiz" }), undefined, t0);
+    const mine = await listStudentAssignments(store, student("S0005"), at(1));
+    expect(mine.find((a) => a.id === id)).toMatchObject({ category: "quiz", title: "Friday quiz" });
+    expect((await listNotices(store, u("S0005").id)).find((n) => n.title.includes("Friday quiz"))).toMatchObject({
+      title: "New quiz: Integrated Science · Friday quiz",
+      href: "/prep/student/academic/quiz",
+    });
+    expect((await listAssignments(store, actor("T003"))).find((a) => a.id === id)!.category).toBe("quiz");
+  });
+
+  it("reads older rows without a category as assignments", async () => {
+    const { assignments } = await store.read("assignments");
+    const row = assignments[0];
+    const raw = await store.backend.read(["Assignments"]);
+    const header = raw.Assignments[0];
+    const col = header.indexOf("category");
+    const line = raw.Assignments.findIndex((r) => r[header.indexOf("id")] === row.id);
+    raw.Assignments[line][col] = "";
+    const { decodeSheet } = await import("@/lib/prep/store/codec");
+    expect(decodeSheet("assignments", raw.Assignments).find((a) => a.id === row.id)!.category).toBe("assignment");
   });
 });
