@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sheetProblemMessage } from "@/lib/prep/errors";
 import { z } from "zod";
 import {
   AccountError,
@@ -44,6 +45,8 @@ export async function createAccountAction(_prev: AccountFormState, formData: For
     return { issued: { loginId: parsed.data.loginId.toUpperCase(), name: parsed.data.name, tempPassword } };
   } catch (e) {
     if (e instanceof AccountError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
 }
@@ -60,6 +63,8 @@ export async function resetPasswordAction(_prev: AccountFormState, formData: For
     return { issued: { loginId, name: String(formData.get("name") ?? ""), tempPassword } };
   } catch (e) {
     if (e instanceof AccountError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
 }
@@ -74,6 +79,8 @@ export async function setActiveAction(_prev: AccountFormState, formData: FormDat
     return {};
   } catch (e) {
     if (e instanceof AccountError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
 }
@@ -172,6 +179,8 @@ export async function assignTeacherAction(_prev: TeachingFormState, formData: Fo
     await assignTeacher(getStore(), { ...parsed.data, classId: parsed.data.classId === "all" ? null : parsed.data.classId });
   } catch (e) {
     if (e instanceof TeachingError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath("/prep/admin", "layout");
@@ -203,6 +212,8 @@ export async function addClassAction(_prev: TeachingFormState, formData: FormDat
     await addClass(getStore(), parsed.data);
   } catch (e) {
     if (e instanceof TeachingError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath("/prep/admin", "layout");

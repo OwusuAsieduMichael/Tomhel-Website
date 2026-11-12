@@ -61,13 +61,14 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
+        <nav className="hidden items-center gap-0.5 lg:flex xl:gap-1" aria-label="Main navigation">
           {navigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:text-accent",
+                // One line each ("Student Life" mustn't wrap); a little tighter on narrower laptops.
+                "whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium transition-colors hover:text-accent xl:px-3",
                 pathname === item.href
                   ? "text-accent"
                   : scrolled
@@ -81,11 +82,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          {/* The BECE Prep portal: /prep sends visitors to its login, or signed-in users to their own home. */}
-          <Button variant={scrolled ? "secondary" : "outline"} asChild>
-            <Link href="/prep">
+          {/* The Academic Prep portal. Its login page sends signed-in users straight to their own home.
+              On narrower laptops only the icon shows, so the menu stays on one line. */}
+          <Button variant={scrolled ? "secondary" : "outline"} asChild className="px-4 xl:px-6">
+            <Link href="/prep/login" aria-label="Academic Prep" title="Academic Prep">
               <GraduationCap aria-hidden />
-              Academic Prep
+              <span className="hidden xl:inline">Academic Prep</span>
             </Link>
           </Button>
           <Button variant="taim" asChild>
@@ -126,7 +128,7 @@ export function SiteHeader() {
             ))}
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
               <Button variant="secondary" asChild className="w-full">
-                <Link href="/prep">
+                <Link href="/prep/login">
                   <GraduationCap aria-hidden />
                   Academic Prep
                 </Link>

@@ -8,7 +8,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: { default: "BECE Prep", template: "%s | BECE Prep" },
+  title: { default: "Academic Prep", template: "%s | Academic Prep" },
   description: "Tomhel BECE preparation for students and teachers.",
   robots: { index: false, follow: false },
 };
@@ -27,6 +27,6 @@ export const viewport: Viewport = {
 /** Root of the BECE Prep app. Deliberately free of the public site's header and footer. */
 export default function PrepRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className={`${jakarta.variable} min-h-screen bg-prep-ground font-prep text-prep-ink`}>{children}</div>
+    <div className={`${jakarta.variable} min-h-screen animate-prep-enter bg-prep-ground font-prep text-prep-ink`}>{children}</div>
   );
 }

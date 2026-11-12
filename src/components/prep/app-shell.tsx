@@ -26,9 +26,9 @@ export function AppShell({ user, children, badges = {} }: { user: SessionUser; c
 
       <header className="sticky top-0 z-30 border-b border-prep-line bg-prep-surface/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
-          <Link href={items[0].href} className="flex min-h-11 items-center gap-2.5" aria-label="BECE Prep home">
+          <Link href={items[0].href} className="flex min-h-11 items-center gap-2.5" aria-label="Academic Prep home">
             <Image src={schoolImages.logo} alt="" width={36} height={36} className="h-9 w-9 rounded-full object-cover" />
-            <span className="font-bold">BECE Prep</span>
+            <span className="font-bold">Academic Prep</span>
           </Link>
           <div className="flex items-center gap-2">
             <div className="hidden text-right sm:block">

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sheetProblemMessage } from "@/lib/prep/errors";
 import { requireRole } from "@/lib/prep/auth/current-user";
 import { markNoticesRead } from "@/lib/prep/notices";
 import { raiseQuery, raiseQuerySchema, ReviewError } from "@/lib/prep/review";
@@ -22,6 +23,8 @@ export async function raiseQueryAction(_prev: QueryState, formData: FormData): P
     await raiseQuery(getStore(), user, parsed.data);
   } catch (e) {
     if (e instanceof ReviewError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath(`/prep/practice/${parsed.data.attemptId}/results`);

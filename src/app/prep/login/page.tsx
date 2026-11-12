@@ -21,7 +21,7 @@ export default async function LoginPage() {
         <Image src={schoolImages.logo} alt="" width={44} height={44} className="size-11 rounded-xl object-cover" priority />
         <div className="flex flex-col">
           <span className="text-lg font-bold">Tomhel</span>
-          <span className="text-[13px] text-prep-muted">BECE Prep</span>
+          <span className="text-[13px] text-prep-muted">Academic Prep</span>
         </div>
       </div>
 

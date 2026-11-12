@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { sheetProblemMessage } from "@/lib/prep/errors";
 import { z } from "zod";
 import { startAssignmentAttempt } from "@/lib/prep/assignments";
 import { requireRole } from "@/lib/prep/auth/current-user";
@@ -28,6 +29,8 @@ export async function startAttemptAction(_prev: StartState, formData: FormData):
     }));
   } catch (e) {
     if (e instanceof AttemptError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   redirect(`/prep/practice/${id}`);
@@ -42,6 +45,8 @@ export async function startAssignmentAction(_prev: StartState, formData: FormDat
     ({ id } = await startAssignmentAttempt(getStore(), user, assignmentId.data));
   } catch (e) {
     if (e instanceof AttemptError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   redirect(`/prep/practice/${id}`);
@@ -55,6 +60,8 @@ export async function saveAnswersAction(attemptId: string, answers: unknown): Pr
     return await saveAnswers(getStore(), user.id, z.string().uuid().parse(attemptId), answers);
   } catch (e) {
     if (e instanceof AttemptError) return { status: "error", message: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { status: "error", message: problem };
     throw e;
   }
 }
@@ -65,6 +72,8 @@ export async function submitAttemptAction(attemptId: string, answers: unknown): 
     await submitAttempt(getStore(), user.id, z.string().uuid().parse(attemptId), answers);
   } catch (e) {
     if (e instanceof AttemptError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   redirect(`/prep/practice/${attemptId}/results`);
