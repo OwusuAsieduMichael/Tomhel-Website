@@ -21,6 +21,27 @@
   --radius-md: 0.5rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
+
+  /* BECE Prep (/prep) tokens, from the BECE Prep brief. Used only inside /prep. */
+  --font-prep: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-prep-ground: #f6f5f1;
+  --color-prep-surface: #ffffff;
+  --color-prep-ink: #17201b;
+  --color-prep-muted: #56605a;
+  --color-prep-line: #e2e0d8;
+  --color-prep-primary: #17603f;
+  --color-prep-primary-soft: #e3efe8;
+  --color-prep-awarded: #157347;
+  --color-prep-misspelt: #9a5b00;
+  --color-prep-misspelt-bg: #fbf1de;
+  --color-prep-incorrect: #b42318;
+  --color-prep-incorrect-bg: #fce8e6;
+  /* From the Academic Prep screens (docs: public/Academic Prep Screens). */
+  --color-prep-input: #cfccc2;
+  --color-prep-track: #e8e6de;
+  --color-prep-flag: #f3e4c8;
+  --color-prep-flag-ink: #7a4700;
+  --color-prep-incorrect-ink: #8f1b13;
 }
 
 @layer base {
