@@ -7,8 +7,9 @@ import { AssignmentForm } from "../assignment-form";
 
 export const metadata: Metadata = { title: "New assignment" };
 
-export default async function NewAssignmentPage() {
+export default async function NewAssignmentPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const user = await requireRole("teacher");
+  const category = (await searchParams).category === "quiz" ? "quiz" : "assignment";
   const options = await getAssignmentFormOptions(getStore(), user);
   const first = options.find((s) => s.papers.length) ?? options[0];
 
@@ -23,14 +24,15 @@ export default async function NewAssignmentPage() {
     <>
       <div className="mb-6">
         <Link href="/prep/teacher/assignments" className="text-sm font-semibold text-prep-primary hover:underline">
-          Assignments
+          Quizzes & assignments
         </Link>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">New assignment</h1>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">{category === "quiz" ? "New quiz" : "New assignment"}</h1>
       </div>
       <AssignmentForm
         options={options}
         started={false}
         defaults={{
+          category,
           subjectId: first?.id ?? "",
           source: "paper",
           kind: "objective",

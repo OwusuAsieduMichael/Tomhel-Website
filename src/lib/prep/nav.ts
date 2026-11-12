@@ -14,7 +14,7 @@ export const navByRole: Record<Role, NavItem[]> = {
   ],
   teacher: [
     { label: "Dashboard", href: "/prep/teacher", icon: "home" },
-    { label: "Assignments", href: "/prep/teacher/assignments", icon: "clipboard" },
+    { label: "Quizzes & assignments", href: "/prep/teacher/assignments", icon: "clipboard" },
     { label: "Review queue", href: "/prep/teacher/review", icon: "inbox" },
     { label: "Profile", href: "/prep/teacher/profile", icon: "user" },
   ],
@@ -31,7 +31,7 @@ export const navByRole: Record<Role, NavItem[]> = {
 export const academicTabs = [
   { label: "BECE", href: "/prep/student/academic/bece" },
   { label: "Quiz", href: "/prep/student/academic/quiz" },
-  { label: "Exams", href: "/prep/student/academic/exams" },
+  { label: "Assignments", href: "/prep/student/academic/assignments" },
 ] as const;
 
 export function isActive(item: { href: string }, pathname: string, isHome: boolean): boolean {

@@ -8,7 +8,7 @@ import { formatDayTime } from "@/lib/prep/format";
 import { getStore } from "@/lib/prep/store";
 import { StateBadge } from "./state-badge";
 
-export const metadata: Metadata = { title: "Assignments" };
+export const metadata: Metadata = { title: "Quizzes & assignments" };
 
 export default async function AssignmentsPage() {
   const user = await requireRole("teacher");
@@ -19,12 +19,17 @@ export default async function AssignmentsPage() {
     <>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Assignments</h1>
-          <p className="mt-1 text-prep-muted">Past papers you set for your classes, with who has done them.</p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Quizzes & assignments</h1>
+          <p className="mt-1 text-prep-muted">Work you set for your classes, from past papers or the question bank, with who has done it.</p>
         </div>
-        <Link href="/prep/teacher/assignments/new" className={prepButton()}>
-          <Plus aria-hidden /> New assignment
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/prep/teacher/assignments/new?category=quiz" className={prepButton({ variant: "secondary" })}>
+            <Plus aria-hidden /> New quiz
+          </Link>
+          <Link href="/prep/teacher/assignments/new" className={prepButton()}>
+            <Plus aria-hidden /> New assignment
+          </Link>
+        </div>
       </div>
 
       {assignments.length === 0 ? (
@@ -47,6 +52,7 @@ export default async function AssignmentsPage() {
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-md bg-prep-primary-soft px-2 py-0.5 text-[11px] font-bold tracking-wide text-prep-primary">{a.category === "quiz" ? "QUIZ" : "ASSIGNMENT"}</span>
                       <span className="font-bold">{a.title}</span>
                       <StateBadge state={a.state} />
                     </div>

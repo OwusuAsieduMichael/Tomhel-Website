@@ -1,12 +1,21 @@
 import { getStore } from "@/lib/prep/store";
 import type { SessionUser } from "@/lib/prep/auth/session";
 import { roleLabel } from "@/lib/prep/nav";
-import { getStudentClass } from "@/lib/prep/queries";
-import { ChangePasswordForm } from "./change-password-form";
+import { getStudentClass, getTeacherSubjectsWithClasses } from "@/lib/prep/queries";
+import { ChangePasswordToggle } from "./change-password-toggle";
 import { PageHeading, PrepCard } from "./ui";
 
 export async function ProfilePanel({ user }: { user: SessionUser }) {
-  const schoolClass = user.role === "student" ? await getStudentClass(getStore(), user.classId) : null;
+  const store = getStore();
+  const schoolClass = user.role === "student" ? await getStudentClass(store, user.classId) : null;
+
+  // A teacher's subjects, each with the classes they take it for.
+  const teaching = new Map<string, string[]>();
+  if (user.role === "teacher") {
+    for (const r of await getTeacherSubjectsWithClasses(store, user.id)) {
+      teaching.set(r.subjectName, [...(teaching.get(r.subjectName) ?? []), r.className ?? "All classes"]);
+    }
+  }
 
   return (
     <div className="max-w-xl space-y-6">
@@ -19,24 +28,35 @@ export async function ProfilePanel({ user }: { user: SessionUser }) {
           <dd className="font-semibold">{user.loginId}</dd>
           <dt className="text-prep-muted">Role</dt>
           <dd className="font-semibold">{roleLabel[user.role]}</dd>
-          {schoolClass ? (
+          {user.role === "student" ? (
             <>
               <dt className="text-prep-muted">Class</dt>
-              <dd className="font-semibold">{schoolClass.name}</dd>
+              <dd className="font-semibold">{schoolClass ? `${schoolClass.name} · ${schoolClass.academicYear}` : "Not in a class yet"}</dd>
+            </>
+          ) : null}
+          {user.role === "teacher" ? (
+            <>
+              <dt className="text-prep-muted">Teaching</dt>
+              <dd>
+                {teaching.size ? (
+                  <ul className="space-y-1">
+                    {[...teaching.entries()].map(([subject, classes]) => (
+                      <li key={subject}>
+                        <span className="font-semibold">{subject}</span>
+                        <span className="text-prep-muted"> · {classes.join(", ")}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-prep-muted">No subjects yet. The admin assigns them on Classes &amp; subjects.</span>
+                )}
+              </dd>
             </>
           ) : null}
         </dl>
       </PrepCard>
 
-      <PrepCard>
-        <h2 className="text-lg font-bold">Change password</h2>
-        {user.mustChangePassword ? (
-          <p className="mt-1 text-sm text-prep-misspelt">The school has asked you to choose a new password.</p>
-        ) : null}
-        <div className="mt-4">
-          <ChangePasswordForm />
-        </div>
-      </PrepCard>
+      <ChangePasswordToggle mustChange={user.mustChangePassword} />
     </div>
   );
 }

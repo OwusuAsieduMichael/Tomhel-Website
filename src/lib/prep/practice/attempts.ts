@@ -381,7 +381,7 @@ export async function loadAttemptResults(store: Store, studentId: string, attemp
       subjectName: ctx.subject?.name ?? "",
       subjectCode: ctx.subject?.code ?? "",
     },
-    assignment: assignment ? { id: assignment.id, title: assignment.title } : null,
+    assignment: assignment ? { id: assignment.id, title: assignment.title, category: assignment.category } : null,
     solutionsHidden: hidden,
     questions: (hidden ? [] : attemptQuestions(data, attempt)).map((q, i) => {
       const query = queries.filter((m) => m.questionId === q.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];

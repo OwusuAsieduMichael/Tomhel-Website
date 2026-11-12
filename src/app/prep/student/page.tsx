@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Bell, BookOpen, ClipboardList, Timer } from "lucide-react";
 import { PageHeading, PrepCard } from "@/components/prep/ui";
-import { listStudentAssignments } from "@/lib/prep/assignments";
+import { listStudentAssignments, workHref } from "@/lib/prep/assignments";
 import { requireRole } from "@/lib/prep/auth/current-user";
 import { formatAgo, formatDayTime } from "@/lib/prep/format";
 import { listNotices } from "@/lib/prep/notices";
@@ -15,8 +15,8 @@ export const metadata: Metadata = { title: "Home" };
 
 const shortcuts = [
   { href: "/prep/student/academic/bece", title: "BECE past papers", body: "Practise Paper 1 and Paper 2 by subject and year.", Icon: BookOpen },
-  { href: "/prep/student/academic/quiz", title: "Topic quizzes", body: "Short quizzes on one topic at a time.", Icon: Timer },
-  { href: "/prep/student/academic/exams", title: "Exams from teachers", body: "Work your teachers have set for you.", Icon: ClipboardList },
+  { href: "/prep/student/academic/quiz", title: "Quizzes", body: "Quizzes your teachers have set for you.", Icon: Timer },
+  { href: "/prep/student/academic/assignments", title: "Assignments", body: "Assignments your teachers have set for you.", Icon: ClipboardList },
 ];
 
 const DUE_SOON_MS = 48 * 3_600_000;
@@ -42,7 +42,7 @@ export default async function StudentHome() {
           {dueSoon.map((a) => (
             <Link
               key={a.id}
-              href={a.runningAttemptId ? `/prep/practice/${a.runningAttemptId}` : "/prep/student/academic/exams"}
+              href={a.runningAttemptId ? `/prep/practice/${a.runningAttemptId}` : workHref(a.category)}
               className="flex items-center gap-3 rounded-2xl bg-prep-primary p-4 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-prep-primary"
             >
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">

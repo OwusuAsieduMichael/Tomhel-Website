@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/prep/ui";
-import { requireRole } from "@/lib/prep/auth/current-user";
+import { AssignedWork } from "../assigned-work";
 
 export const metadata: Metadata = { title: "Quiz" };
+export const dynamic = "force-dynamic";
 
-export default async function QuizPage() {
-  await requireRole("student");
-  return (
-    <>
-      <ComingSoon what="Topic quizzes" phase={6} />
-    </>
-  );
+export default function QuizPage() {
+  return <AssignedWork category="quiz" />;
 }

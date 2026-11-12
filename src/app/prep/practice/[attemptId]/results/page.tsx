@@ -32,7 +32,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
   if (!data) redirect(`/prep/practice/${attemptId}`);
 
   const { attempt, paper, questions, assignment, solutionsHidden } = data;
-  const backHref = assignment ? "/prep/student/academic/exams" : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}`;
+  const backHref = assignment ? (assignment.category === "quiz" ? "/prep/student/academic/quiz" : "/prep/student/academic/assignments") : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}`;
   const score = attempt.score ?? 0;
   const max = attempt.maxScore ?? 0;
   const pending = attempt.pendingMarks ?? 0;
@@ -50,7 +50,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
       <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-prep-line bg-prep-surface px-5 py-3">
         <Link
           href={backHref}
-          aria-label={assignment ? "Back to work from teachers" : "Back to past papers"}
+          aria-label={assignment ? (assignment.category === "quiz" ? "Back to quizzes" : "Back to assignments") : "Back to past papers"}
           className="-ml-3 flex size-11 items-center justify-center rounded-xl hover:bg-prep-primary-soft"
         >
           <ChevronLeft className="size-[22px]" aria-hidden />
@@ -134,7 +134,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
 
         <div className="flex gap-2.5 pt-2">
           <Link href={backHref} className="flex h-[52px] flex-1 items-center justify-center rounded-xl border border-prep-input bg-prep-surface text-[15px] font-bold">
-            {assignment ? "Work from teachers" : "Another paper"}
+            {assignment ? (assignment.category === "quiz" ? "My quizzes" : "My assignments") : "Another paper"}
           </Link>
           <Link href="/prep/student/progress" className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
             My progress

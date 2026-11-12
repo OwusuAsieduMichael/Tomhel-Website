@@ -36,8 +36,8 @@ export default async function TeacherDashboard() {
       href: "/prep/teacher/assignments",
       Icon: ClipboardList,
       value: open.length,
-      label: open.length === 1 ? "assignment open" : "assignments open",
-      sub: open.length ? open.map((a) => `${a.title}: ${a.submitted}/${a.students}`).slice(0, 2).join(" · ") : "Set a past paper for your classes",
+      label: open.length === 1 ? "quiz or assignment open" : "quizzes & assignments open",
+      sub: open.length ? open.map((a) => `${a.title}: ${a.submitted}/${a.students}`).slice(0, 2).join(" · ") : "Set a quiz or an assignment for your classes",
     },
   ];
 

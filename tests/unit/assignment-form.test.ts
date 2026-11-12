@@ -47,3 +47,12 @@ describe("reading the assignment form", () => {
     expect(msg({ ...common, source: "paper", paperId: id(9), time: "custom", customMinutes: "2" })).toMatch(/at least 5 minutes/);
   });
 });
+
+describe("quiz or assignment", () => {
+  it("reads the category, defaulting to assignment", () => {
+    const quiz = assignmentFromForm(form({ ...common, category: "quiz", source: "paper", paperId: id(9) }));
+    expect(quiz.success && quiz.data.category).toBe("quiz");
+    const plain = assignmentFromForm(form({ ...common, source: "paper", paperId: id(9) }));
+    expect(plain.success && plain.data.category).toBe("assignment");
+  });
+});

@@ -4,6 +4,7 @@ import { noticeOps } from "./notices";
 import { attemptQuestions, AttemptError, finishAttempt, isExpired, newAttemptRow, PAPER_TABLES, type PaperData } from "./practice/attempts";
 import {
   ASSIGNMENT_SOURCES,
+  WORK_CATEGORIES,
   ASSIGNMENT_STATUSES,
   ATTEMPT_POLICIES,
   QUESTION_KINDS,
@@ -32,6 +33,11 @@ import {
  */
 
 type QuestionKind = (typeof QUESTION_KINDS)[number];
+export type WorkCategory = (typeof WORK_CATEGORIES)[number];
+
+/** Where students find this kind of work, and what to call it. */
+export const workHref = (c: WorkCategory) => (c === "quiz" ? "/prep/student/academic/quiz" : "/prep/student/academic/assignments");
+export const workWord = (c: WorkCategory) => (c === "quiz" ? "quiz" : "assignment");
 
 /** The questions of an assignment, in order. */
 export const assignmentQuestions = (data: PaperData, a: Pick<Assignment, "paperId" | "questionIds">) => attemptQuestions(data, a);
@@ -183,6 +189,7 @@ const dateTime = (label: string) =>
 
 export const assignmentInputSchema = z
   .object({
+    category: z.enum(WORK_CATEGORIES).default("assignment"),
     subjectId: z.string().uuid("Choose a subject."),
     source: z.enum(ASSIGNMENT_SOURCES).default("paper"),
     kind: z.enum(QUESTION_KINDS).default("objective"),
@@ -211,6 +218,7 @@ function readForm(formData: FormData) {
   const source = String(formData.get("source") ?? "paper");
   const limit = String(formData.get("questionLimit") ?? "").trim();
   return {
+    category: formData.get("category") ?? "assignment",
     subjectId: formData.get("subjectId"),
     source,
     kind: formData.get("kind") ?? "objective",
@@ -233,7 +241,7 @@ function readForm(formData: FormData) {
 export const assignmentFromForm = (formData: FormData) => assignmentInputSchema.safeParse(readForm(formData));
 
 type ParsedInput = z.output<typeof assignmentInputSchema>;
-type Defaulted = "source" | "kind" | "paperId" | "topicIds" | "questionIds" | "questionLimit";
+type Defaulted = "category" | "source" | "kind" | "paperId" | "topicIds" | "questionIds" | "questionLimit";
 /** A parsed form. The question-source fields default to a whole past paper. */
 export type AssignmentInput = Omit<ParsedInput, Defaulted> & Partial<Pick<ParsedInput, Defaulted>>;
 
@@ -307,7 +315,7 @@ function resolveQuestions(data: SaveData, input: ParsedInput, existing: Assignme
 
 /** Creates an assignment, or updates one when `id` is given. Returns its ID. */
 export async function saveAssignment(store: Store, actor: Actor, raw: AssignmentInput, id?: string, now = new Date()): Promise<string> {
-  const input: ParsedInput = { source: "paper", kind: "objective", paperId: null, topicIds: [], questionIds: [], questionLimit: null, ...raw };
+  const input: ParsedInput = { category: "assignment", source: "paper", kind: "objective", paperId: null, topicIds: [], questionIds: [], questionLimit: null, ...raw };
   if (input.closesAt.getTime() <= input.opensAt.getTime()) throw new AssignmentError("The close date must be after the open date.");
   const scope = await scopeOf(store, actor);
   const data = await store.read("assignments", "attempts", "papers", "questions", "topics", "users", "subjects");
@@ -336,6 +344,7 @@ export async function saveAssignment(store: Store, actor: Actor, raw: Assignment
   }
 
   const fields = {
+    category: input.category,
     subjectId: input.subjectId,
     source: input.source,
     ...questions,
@@ -357,9 +366,9 @@ export async function saveAssignment(store: Store, actor: Actor, raw: Assignment
   const notify = noticeOps(
     data.users.filter((u) => u.role === "student" && u.active && !!u.classId && newClasses.includes(u.classId)).map((u) => u.id),
     {
-      title: `New work: ${subject?.name ?? ""} · ${input.title}`,
+      title: `New ${workWord(input.category)}: ${subject?.name ?? ""} · ${input.title}`,
       body: `${now.getTime() < input.opensAt.getTime() ? `Opens ${formatDayTime(input.opensAt)}. ` : ""}Closes ${formatDayTime(input.closesAt)}.`,
-      href: "/prep/student/academic/exams",
+      href: workHref(input.category),
     },
     now,
   );
@@ -394,7 +403,7 @@ export async function releaseSolutions(store: Store, actor: Actor, id: string, n
   const done = [...new Set(attempts.filter((t) => t.assignmentId === id && t.status === "submitted").map((t) => t.studentId))];
   await store.write([
     update("assignments", id, { solutionsReleasedAt: now, updatedAt: now }),
-    ...noticeOps(done, { title: `Solutions are ready: ${assignment.title}`, body: "Your teacher has released the answers and solutions.", href: "/prep/student/academic/exams" }, now),
+    ...noticeOps(done, { title: `Solutions are ready: ${assignment.title}`, body: "Your teacher has released the answers and solutions.", href: workHref(assignment.category) }, now),
   ]);
 }
 
@@ -415,7 +424,7 @@ export async function sendReminder(store: Store, actor: Actor, id: string, now =
   const subject = subjects.find((s) => s.id === a.subjectId)?.name ?? "";
   await store.write([
     update("assignments", id, { remindedAt: now }),
-    ...noticeOps(waiting, { title: `Reminder: ${subject} · ${a.title}`, body: `Closes ${formatDayTime(a.closesAt)}.`, href: "/prep/student/academic/exams" }, now),
+    ...noticeOps(waiting, { title: `Reminder: ${subject} · ${a.title}`, body: `Closes ${formatDayTime(a.closesAt)}.`, href: workHref(a.category) }, now),
   ]);
   return waiting.length;
 }
@@ -454,6 +463,7 @@ export async function listAssignments(store: Store, actor: Actor, now = new Date
       const done = new Set(attempts.filter((t) => t.assignmentId === a.id && t.status === "submitted").map((t) => t.studentId));
       return {
         id: a.id,
+        category: a.category,
         title: a.title,
         subject: subjects.find((s) => s.id === a.subjectId)?.name ?? "Unknown subject",
         classes: sortClasses(classes.filter((c) => a.classIds.includes(c.id))).map((c) => c.name),
@@ -573,6 +583,7 @@ export async function listStudentAssignments(store: Store, student: StudentRef, 
       const state = assignmentState(a, now);
       return {
         id: a.id,
+        category: a.category,
         title: a.title,
         subject: subjects.find((x) => x.id === a.subjectId)?.name ?? "",
         paper: describeAssignment({ papers: data.papers, topics }, a),

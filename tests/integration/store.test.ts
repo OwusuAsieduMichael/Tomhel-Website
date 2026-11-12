@@ -107,3 +107,14 @@ describe("Apps Script helpers", () => {
     expect(gas.constantTimeEqualPure_("abc", "abcd")).toBe(false);
   });
 });
+
+describe("columns added later", () => {
+  it("reads a missing column that has a default before setup adds it", async () => {
+    const { decodeSheet } = await import("@/lib/prep/store/codec");
+    const { tables } = await import("@/lib/prep/store");
+    const header = Object.keys(tables.assignments.columns).filter((c) => c !== "category");
+    expect(decodeSheet("assignments", [header])).toEqual([]);
+    const without = Object.keys(tables.users.columns).filter((c) => c !== "role");
+    expect(() => decodeSheet("users", [without])).toThrow(/missing the column "role"/);
+  });
+});
