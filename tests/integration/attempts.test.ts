@@ -132,3 +132,27 @@ describe("a theory paper", () => {
     expect(list[0]).toMatchObject({ title: "French 2022 · Paper 2", pendingMarks: 10 });
   });
 });
+
+describe("submitting is quick", () => {
+  it("saves the final answers and marks them in one read and one write", async () => {
+    const { id } = await startAttempt(store, s2, { paperId: mathPaper, mode: "full", timeLimitMinutes: null });
+    const qs = await ids("MATH-");
+    const counts = { read: 0, write: 0 };
+    const backend = store.backend;
+    const read = backend.read.bind(backend);
+    const write = backend.write.bind(backend);
+    backend.read = async (s) => (counts.read++, read(s));
+    backend.write = async (o) => (counts.write++, write(o));
+    try {
+      const done = await submitAttempt(store, s2, id, { [qs[0].id]: { choice: "A" } });
+      expect(counts).toEqual({ read: 1, write: 1 });
+      expect(done.status).toBe("submitted");
+      expect((done.answers as Record<string, { choice?: string }>)[qs[0].id]).toEqual({ choice: "A" });
+    } finally {
+      backend.read = read;
+      backend.write = write;
+    }
+    const saved = (await store.read("attempts")).attempts.find((a) => a.id === id)!;
+    expect(saved.answers).toEqual({ [qs[0].id]: { choice: "A" } });
+  });
+});

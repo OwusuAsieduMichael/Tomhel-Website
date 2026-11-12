@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * Every /prep page and action talks to the Google Sheet, and each call takes a second or more (longer when
+ * Google is busy or the script starts cold). Give them up to a minute instead of the platform's short default,
+ * so a slow moment doesn't fail a student's submit.
+ */
+export const maxDuration = 60;
+
 export const viewport: Viewport = {
   themeColor: "#17603f",
 };

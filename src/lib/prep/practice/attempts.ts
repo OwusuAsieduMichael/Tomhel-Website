@@ -244,6 +244,8 @@ export async function finishAttempt(store: Store, data: PaperData, attempt: Atte
   const { subject } = attemptContext(data, attempt);
   const results = markAnswers(attemptQuestions(data, attempt), subject?.autoMarkTheory ?? true, readAnswers(attempt));
   const fields = {
+    // Saved with the marks, so a submit with final answers is a single write.
+    answers: attempt.answers,
     status: "submitted" as const,
     submittedAt: auto && attempt.deadlineAt ? attempt.deadlineAt : now,
     autoSubmitted: auto,
@@ -256,7 +258,8 @@ export async function finishAttempt(store: Store, data: PaperData, attempt: Atte
 }
 
 async function ownAttempt(store: Store, studentId: string, attemptId: string) {
-  const data = await store.read("attempts", "assignments", ...PAPER_TABLES);
+  // One read for everything the runner, submit and results need (each read is a trip to the Google Sheet).
+  const data = await store.read("attempts", "assignments", "markQueries", ...PAPER_TABLES);
   const attempt = data.attempts.find((a) => a.id === attemptId && a.studentId === studentId);
   if (!attempt) throw new AttemptError("That attempt doesn't exist.");
   const assignment = attempt.assignmentId ? (data.assignments.find((x) => x.id === attempt.assignmentId) ?? null) : null;
@@ -276,26 +279,34 @@ export async function saveAnswers(store: Store, studentId: string, attemptId: st
     await finishAttempt(store, data, attempt, true, now);
     return { status: "submitted" as const };
   }
-  const allowed = new Set(attemptQuestions(data, attempt).map((q) => q.id));
-  const before = readAnswers(attempt);
-  const answers: Answers = {};
-  for (const [id, entry] of Object.entries(parsed.data)) {
-    if (!allowed.has(id)) continue;
-    answers[id] = attempt.mode === "practice" && before[id]?.choice ? { ...entry, choice: before[id].choice } : entry;
-  }
-  await store.write([update("attempts", attempt.id, { answers, updatedAt: now })]);
+  await store.write([update("attempts", attempt.id, { answers: mergeAnswers(data, attempt, parsed.data), updatedAt: now })]);
   return { status: "saved" as const };
 }
 
+/** The answers to keep: only this attempt's questions; in practice mode, objective answers already given stay. */
+function mergeAnswers(data: PaperData, attempt: Attempt, incoming: Answers): Answers {
+  const allowed = new Set(attemptQuestions(data, attempt).map((q) => q.id));
+  const before = readAnswers(attempt);
+  const answers: Answers = {};
+  for (const [id, entry] of Object.entries(incoming)) {
+    if (!allowed.has(id)) continue;
+    answers[id] = attempt.mode === "practice" && before[id]?.choice ? { ...entry, choice: before[id].choice } : entry;
+  }
+  return answers;
+}
+
+/**
+ * Saves the final answers (when given and still in time) and marks the attempt, in one read and one write:
+ * each trip to the Google Sheet takes a second or more.
+ */
 export async function submitAttempt(store: Store, studentId: string, attemptId: string, raw: unknown, now = new Date()) {
   const { data, attempt } = await ownAttempt(store, studentId, attemptId);
   if (attempt.status !== "in_progress") return attempt;
-  if (raw !== undefined && !isExpired(attempt, now)) {
-    await saveAnswers(store, studentId, attemptId, raw, now);
-    const fresh = await ownAttempt(store, studentId, attemptId);
-    return finishAttempt(store, fresh.data, fresh.attempt, false, now);
-  }
-  return finishAttempt(store, data, attempt, isExpired(attempt, now), now);
+  const expired = isExpired(attempt, now);
+  if (raw === undefined || expired) return finishAttempt(store, data, attempt, expired, now);
+  const parsed = answersSchema.safeParse(raw);
+  if (!parsed.success) throw new AttemptError("Those answers couldn't be read.");
+  return finishAttempt(store, data, { ...attempt, answers: mergeAnswers(data, attempt, parsed.data) }, false, now);
 }
 
 /** What the runner needs. The answer key is only included in practice mode. */
@@ -361,8 +372,7 @@ export async function loadAttemptResults(store: Store, studentId: string, attemp
   const hidden = solutionsHiddenUntil(assignment, now);
   const answers = readAnswers(attempt);
   const results = (attempt.results ?? {}) as Results;
-  const { markQueries } = await store.read("markQueries");
-  const queries = markQueries.filter((m) => m.attemptId === attempt.id);
+  const queries = data.markQueries.filter((m) => m.attemptId === attempt.id);
   return {
     attempt,
     paper: {
