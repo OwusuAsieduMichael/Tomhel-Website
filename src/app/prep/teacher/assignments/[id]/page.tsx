@@ -26,7 +26,12 @@ const statusChip: Record<Row["status"], { label: string; className: string }> = 
   not_started: { label: "Not started", className: "bg-prep-track text-prep-muted" },
 };
 
-const solutionsText = { after_submit: "solutions after submitting", after_close: "solutions after the close", on_release: "solutions when you release them" };
+const solutionsText = {
+  after_submit: "solutions after submitting",
+  after_close: "solutions after the close",
+  on_release: "solutions when you release them",
+  instant: "marked as students answer",
+};
 
 export default async function TrackerPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ status?: string }> }) {
   const user = await requireRole("teacher");
