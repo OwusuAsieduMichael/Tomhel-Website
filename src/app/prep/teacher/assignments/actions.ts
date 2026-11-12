@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sheetProblemMessage } from "@/lib/prep/errors";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { AssignmentError, assignmentFromForm, deleteAssignment, releaseSolutions, saveAssignment, sendReminder } from "@/lib/prep/assignments";
@@ -21,6 +22,8 @@ export async function saveAssignmentAction(_prev: AssignmentFormState, formData:
     savedId = await saveAssignment(getStore(), user, parsed.data, id.data);
   } catch (e) {
     if (e instanceof AssignmentError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath("/prep/teacher", "layout");
@@ -37,6 +40,8 @@ export async function deleteAssignmentAction(_prev: AssignmentFormState, formDat
     await deleteAssignment(getStore(), user, id.data);
   } catch (e) {
     if (e instanceof AssignmentError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath("/prep/teacher", "layout");
@@ -55,6 +60,8 @@ export async function sendReminderAction(_prev: ReminderState, formData: FormDat
     return { sent };
   } catch (e) {
     if (e instanceof AssignmentError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
 }
@@ -67,6 +74,8 @@ export async function releaseSolutionsAction(_prev: AssignmentFormState, formDat
     await releaseSolutions(getStore(), user, id.data);
   } catch (e) {
     if (e instanceof AssignmentError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath(`/prep/teacher/assignments/${id.data}`);

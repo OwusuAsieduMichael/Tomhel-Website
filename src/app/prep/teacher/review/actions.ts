@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sheetProblemMessage } from "@/lib/prep/errors";
 import { requireRole } from "@/lib/prep/auth/current-user";
 import { answerQuery, answerQuerySchema, changeMark, changeMarkSchema, markInputSchema, returnMark, ReviewError } from "@/lib/prep/review";
 import { getStore } from "@/lib/prep/store";
@@ -12,6 +13,8 @@ async function run(fn: () => Promise<void>): Promise<Result> {
     await fn();
   } catch (e) {
     if (e instanceof ReviewError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
     throw e;
   }
   revalidatePath("/prep/teacher", "layout");

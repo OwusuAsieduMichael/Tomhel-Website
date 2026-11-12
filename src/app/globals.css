@@ -42,6 +42,27 @@
   --color-prep-flag: #f3e4c8;
   --color-prep-flag-ink: #7a4700;
   --color-prep-incorrect-ink: #8f1b13;
+
+  /* Academic Prep pages fade and rise in slightly when they open. */
+  --animate-prep-enter: prep-enter 0.35s ease-out both;
+  --animate-prep-spin: spin 0.9s linear infinite;
+
+  @keyframes prep-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-prep-enter {
+    animation: none;
+  }
 }
 
 @layer base {
