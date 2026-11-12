@@ -356,7 +356,7 @@ export type RunnerData = Awaited<ReturnType<typeof loadAttemptForRunner>>;
  * Returns null if the solutions are visible now, otherwise when they will be (null date = when the teacher releases them).
  */
 export function solutionsHiddenUntil(a: Assignment | null | undefined, now: Date): { until: Date | null } | null {
-  if (!a || a.solutions === "after_submit") return null;
+  if (!a || a.solutions === "after_submit" || a.solutions === "instant") return null;
   if (a.solutions === "after_close") return now.getTime() >= a.closesAt.getTime() ? null : { until: a.closesAt };
   return a.solutionsReleasedAt ? null : { until: null };
 }

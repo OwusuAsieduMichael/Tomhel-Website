@@ -188,7 +188,8 @@ export function Runner({ data }: { data: RunnerData }) {
           answers={answers}
           current={index}
           onJump={setIndex}
-          summary={`${answeredCount} answered · ${flaggedCount} flagged`}
+          practice={practice}
+          summary={practice && total !== null ? `${total} right · ${answeredCount - total} wrong · ${questions.length - answeredCount} to go` : `${answeredCount} answered · ${flaggedCount} flagged`}
         />
 
         <div className="flex-1" />
@@ -374,12 +375,15 @@ function QuestionGrid({
   answers,
   current,
   onJump,
+  practice,
   summary,
 }: {
   questions: RunnerData["questions"];
   answers: Answers;
   current: number;
   onJump: (i: number) => void;
+  /** Instant marking: answered questions show right (green) or wrong (red). */
+  practice: boolean;
   summary: string;
 }) {
   return (
@@ -392,22 +396,31 @@ function QuestionGrid({
         {questions.map((x, i) => {
           const a = answers[x.id];
           const answered = !!(a?.choice || a?.text?.trim());
+          // In practice mode the key is known on the page, so an answered question shows whether it was right.
+          const marked = practice && !!a?.choice && !!x.key ? (a.choice === x.key.correct ? "right" : "wrong") : null;
           return (
             <li key={x.id}>
               <button
                 type="button"
                 onClick={() => onJump(i)}
                 aria-current={i === current ? "step" : undefined}
-                aria-label={`Question ${x.numberLabel}${answered ? ", answered" : ""}${a?.flagged ? ", flagged" : ""}`}
+                aria-label={`Question ${x.numberLabel}${marked ? `, ${marked}` : answered ? ", answered" : ""}${a?.flagged ? ", flagged" : ""}`}
                 className={cn(
                   "flex h-8 w-full items-center justify-center rounded-[5px] border text-[11px] font-bold",
                   i === current
-                    ? "border-2 border-prep-ink bg-prep-surface text-prep-ink"
-                    : a?.flagged
-                      ? "border-prep-misspelt bg-prep-flag text-prep-flag-ink"
-                      : answered
-                        ? "border-prep-primary bg-prep-primary text-white"
-                        : "border-prep-line bg-prep-surface text-prep-muted",
+                    ? cn(
+                        "border-2 border-prep-ink",
+                        marked === "right" ? "bg-prep-primary-soft text-prep-awarded" : marked === "wrong" ? "bg-prep-incorrect-bg text-prep-incorrect" : "bg-prep-surface text-prep-ink",
+                      )
+                    : marked === "right"
+                      ? "border-prep-awarded bg-prep-awarded text-white"
+                      : marked === "wrong"
+                        ? "border-prep-incorrect bg-prep-incorrect text-white"
+                        : a?.flagged
+                          ? "border-prep-misspelt bg-prep-flag text-prep-flag-ink"
+                          : answered
+                            ? "border-prep-primary bg-prep-primary text-white"
+                            : "border-prep-line bg-prep-surface text-prep-muted",
                 )}
               >
                 {x.numberLabel}
@@ -417,10 +430,23 @@ function QuestionGrid({
         })}
       </ol>
       <div className="flex flex-wrap gap-3.5 text-xs text-prep-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-[3px] bg-prep-primary" />
-          Answered
-        </span>
+        {practice ? (
+          <>
+            <span className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-[3px] bg-prep-awarded" />
+              Right
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-[3px] bg-prep-incorrect" />
+              Wrong
+            </span>
+          </>
+        ) : (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-[3px] bg-prep-primary" />
+            Answered
+          </span>
+        )}
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-[3px] border border-prep-misspelt bg-prep-flag" />
           Flagged

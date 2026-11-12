@@ -38,7 +38,8 @@ export const ASSIGNMENT_STATUSES = ["draft", "published"] as const;
 /** single = one attempt; best = several attempts while open, the best score counts. */
 export const ATTEMPT_POLICIES = ["single", "best"] as const;
 /** When students see the answer key and solutions for an assignment. */
-export const SOLUTION_POLICIES = ["after_submit", "after_close", "on_release"] as const;
+/** instant = objective work marked as the student answers (right option shown after each question). */
+export const SOLUTION_POLICIES = ["after_submit", "after_close", "on_release", "instant"] as const;
 export const ASSIGNMENT_SOURCES = ["paper", "topic", "bank"] as const;
 export const QUESTION_KINDS = ["objective", "theory"] as const;
 export const QUERY_STATUSES = ["open", "answered"] as const;

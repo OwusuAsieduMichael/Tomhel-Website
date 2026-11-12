@@ -331,6 +331,10 @@ export async function saveAssignment(store: Store, actor: Actor, raw: Assignment
     questions = resolveQuestions(data, input, existing);
   }
 
+  if (input.solutions === "instant" && questions.kind !== "objective") {
+    throw new AssignmentError("Marking as students answer works for objective questions only. Choose another option for written work.");
+  }
+
   const fields = {
     subjectId: input.subjectId,
     source: input.source,
@@ -614,7 +618,8 @@ export async function startAssignmentAttempt(store: Store, student: StudentRef, 
     paperId: a.paperId,
     questionIds: a.source === "paper" ? [] : questions.map((q) => q.id),
     assignmentId: a.id,
-    mode: "full",
+    // Instant marking shows the key after each question, so it only applies to objective questions.
+    mode: a.solutions === "instant" && questions.every((q) => q.type === "mcq") ? "practice" : "full",
     timeLimitMinutes: a.timeLimitMinutes,
     deadlineAt: new Date(Math.min(byLimit, a.closesAt.getTime())),
     maxScore: questions.reduce((s, q) => s + q.marks, 0),

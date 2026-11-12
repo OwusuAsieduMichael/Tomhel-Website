@@ -201,3 +201,23 @@ describe("mark queries and changing marks", () => {
     expect(r.questions.find((q) => q.id === qid)!.result).toMatchObject({ kind: "mcq", choice: "A", awarded: 0, changed: { note: "Key was wrong." } });
   });
 });
+
+describe("instant marking on set work", () => {
+  it("runs objective work in practice mode, with the key on the page and solutions shown", async () => {
+    const { questions } = await store.read("questions");
+    const ids = questions.filter((q) => q.code.startsWith("SCI-2024")).map((q) => q.id);
+    const id = await saveAssignment(store, actor("T003"), base({ title: "Instant quiz", source: "bank", kind: "objective", questionIds: ids, solutions: "instant" }), undefined, t0);
+    const { id: attemptId } = await startAssignmentAttempt(store, student("S0004"), id, at(1));
+    const runner = await loadAttemptForRunner(store, u("S0004").id, attemptId, at(2));
+    expect(runner.attempt.mode).toBe("practice");
+    expect(runner.questions[0].key).toEqual({ correct: "A", explanation: null });
+    await submitAttempt(store, u("S0004").id, attemptId, {}, at(3));
+    expect((await loadAttemptResults(store, u("S0004").id, attemptId, at(4)))!.solutionsHidden).toBeNull();
+  });
+
+  it("isn't offered for written work", async () => {
+    const { papers } = await store.read("papers");
+    const frePaper = papers.find((p) => p.subjectId === fre)!.id;
+    await expect(saveAssignment(store, actor("T001"), base({ subjectId: fre, source: "paper", paperId: frePaper, solutions: "instant" }), undefined, t0)).rejects.toThrow(/objective questions only/);
+  });
+});

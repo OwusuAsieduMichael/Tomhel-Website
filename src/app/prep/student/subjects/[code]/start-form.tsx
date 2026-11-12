@@ -30,7 +30,8 @@ export function StartPaperForm({ papers, theoryToTeacher }: { papers: Paper[]; t
   const yearPapers = papers.filter((p) => p.year === year);
   const [paperId, setPaperId] = useState<string | undefined>(yearPapers[0]?.id);
   const paper = papers.find((p) => p.id === paperId) ?? yearPapers[0];
-  const [mode, setMode] = useState<"practice" | "full">("full");
+  // Practice (instant marking) first: students see the right option as they go, and the results at the end.
+  const [mode, setMode] = useState<"practice" | "full">("practice");
   const timeOptions = [...new Set([20, 30, 40, ...(paper?.durationMinutes ? [paper.durationMinutes] : [])])].sort((a, b) => a - b);
   const [time, setTime] = useState<string>(String(paper?.durationMinutes ?? 40));
   const objectives = paper?.paperNo === 1;
@@ -88,8 +89,8 @@ export function StartPaperForm({ papers, theoryToTeacher }: { papers: Paper[]; t
           <div className="flex gap-1 rounded-xl bg-prep-track p-1">
             {(
               [
-                ["practice", "Practice", "answer after each"],
-                ["full", "Full paper", "answers at the end"],
+                ["practice", "Practice", "marked as you answer"],
+                ["full", "Exam conditions", "answers at the end"],
               ] as const
             ).map(([value, title, sub]) => (
               <label key={value} className={segment}>

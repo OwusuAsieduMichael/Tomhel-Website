@@ -20,7 +20,7 @@ export type AssignmentDefaults = {
   opensAt: string;
   closesAt: string;
   attemptPolicy: "single" | "best";
-  solutions: "after_submit" | "after_close" | "on_release";
+  solutions: "after_submit" | "after_close" | "on_release" | "instant";
   status: "draft" | "published";
 };
 
@@ -367,10 +367,11 @@ export function AssignmentForm({
               <label htmlFor="solutions" className={label}>
                 Show answers and solutions
               </label>
-              <select id="solutions" name="solutions" value={solutions} onChange={(e) => setSolutions(e.target.value as typeof solutions)} className={input}>
+              <select id="solutions" name="solutions" value={kind !== "objective" && solutions === "instant" ? "after_close" : solutions} onChange={(e) => setSolutions(e.target.value as typeof solutions)} className={input}>
                 <option value="after_close">After the close date</option>
                 <option value="after_submit">Right after submitting</option>
                 <option value="on_release">When I release them</option>
+                {kind === "objective" ? <option value="instant">After each question (instant marking)</option> : null}
               </select>
             </div>
           </div>
