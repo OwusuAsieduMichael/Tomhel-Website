@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { WelcomeSplash } from "@/components/prep/welcome-splash";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin", "latin-ext"],
@@ -27,6 +28,9 @@ export const viewport: Viewport = {
 /** Root of the BECE Prep app. Deliberately free of the public site's header and footer. */
 export default function PrepRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className={`${jakarta.variable} min-h-screen animate-prep-enter bg-prep-ground font-prep text-prep-ink`}>{children}</div>
+    <div className={`${jakarta.variable} min-h-screen animate-prep-enter bg-prep-ground font-prep text-prep-ink`}>
+      <WelcomeSplash />
+      {children}
+    </div>
   );
 }
