@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { GraduationCap, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { navigation, schoolImages, siteConfig } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -81,6 +81,13 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
+          {/* The BECE Prep portal: /prep sends visitors to its login, or signed-in users to their own home. */}
+          <Button variant={scrolled ? "secondary" : "outline"} asChild>
+            <Link href="/prep">
+              <GraduationCap aria-hidden />
+              Academic Prep
+            </Link>
+          </Button>
           <Button variant="taim" asChild>
             <Link href="/admissions">Apply Now</Link>
           </Button>
@@ -118,6 +125,12 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
+              <Button variant="secondary" asChild className="w-full">
+                <Link href="/prep">
+                  <GraduationCap aria-hidden />
+                  Academic Prep
+                </Link>
+              </Button>
               <Button variant="taim" asChild className="w-full">
                 <Link href="/admissions">Apply Now</Link>
               </Button>
