@@ -17,6 +17,7 @@ import {
   setQuestionStatus,
   type PaperImportResult,
 } from "@/lib/prep/admin/question-bank";
+import { addClass, assignTeacher, TeachingError, unassignTeacher } from "@/lib/prep/admin/teaching";
 import { requireRole } from "@/lib/prep/auth/current-user";
 import { getStore, ROLES } from "@/lib/prep/store";
 
@@ -148,4 +149,62 @@ export async function saveQuestionAction(
   if (!result.ok) return { problems: result.problems };
   revalidatePath("/prep/admin", "layout");
   return { saved: true };
+}
+
+// ---------------------------------------------------------------------------
+// Who teaches what, and classes
+// ---------------------------------------------------------------------------
+
+export type TeachingFormState = { error?: string; success?: string };
+
+const assignSchema = z.object({
+  teacherId: z.string().uuid("Choose a teacher."),
+  subjectId: z.string().uuid("Choose a subject."),
+  // "all" = every class.
+  classId: z.union([z.literal("all"), z.string().uuid("Choose a class.")]),
+});
+
+export async function assignTeacherAction(_prev: TeachingFormState, formData: FormData): Promise<TeachingFormState> {
+  await requireRole("admin");
+  const parsed = assignSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  try {
+    await assignTeacher(getStore(), { ...parsed.data, classId: parsed.data.classId === "all" ? null : parsed.data.classId });
+  } catch (e) {
+    if (e instanceof TeachingError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/prep/admin", "layout");
+  return { success: "Assigned. The teacher can now set work and mark for this subject." };
+}
+
+export async function unassignTeacherAction(formData: FormData) {
+  await requireRole("admin");
+  const id = z.string().uuid().safeParse(formData.get("id"));
+  if (!id.success) return;
+  try {
+    await unassignTeacher(getStore(), id.data);
+  } catch (e) {
+    if (!(e instanceof TeachingError)) throw e;
+  }
+  revalidatePath("/prep/admin", "layout");
+}
+
+const classSchema = z.object({
+  name: z.string().trim().min(1, "Enter the class name, e.g. JHS 2B.").max(40),
+  academicYear: z.string().trim().min(1, "Enter the academic year, e.g. 2026/2027."),
+});
+
+export async function addClassAction(_prev: TeachingFormState, formData: FormData): Promise<TeachingFormState> {
+  await requireRole("admin");
+  const parsed = classSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  try {
+    await addClass(getStore(), parsed.data);
+  } catch (e) {
+    if (e instanceof TeachingError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/prep/admin", "layout");
+  return { success: `${parsed.data.name.trim()} added.` };
 }
