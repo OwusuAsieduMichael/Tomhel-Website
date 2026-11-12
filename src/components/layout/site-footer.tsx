@@ -35,6 +35,11 @@ export function SiteFooter() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/prep" className="text-sm text-white/70 transition-colors hover:text-white">
+                  Academic Prep (students &amp; staff)
+                </Link>
+              </li>
             </ul>
           </div>
 
