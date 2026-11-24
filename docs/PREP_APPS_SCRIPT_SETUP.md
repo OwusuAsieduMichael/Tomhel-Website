@@ -56,7 +56,7 @@ Generate a secret with: `node -e "console.log(require('crypto').randomBytes(32).
 
 ### 4. Deploy
 
-**Deploy → New deployment → Web app**, Execute as **Me**, Who has access **Anyone**. Authorize when asked (Sheets access only; this script sends no email). Copy the web app URL.
+**Deploy → New deployment → Web app**, Execute as **Me**, Who has access **Anyone**. Authorize when asked: Sheets, and Drive for question pictures, which are kept in a private "Tomhel BECE Prep Files" folder created next to the spreadsheet (or set `FILES_FOLDER_ID` in Script Properties). The script sends no email. Copy the web app URL.
 
 After any change to `Code.gs`: **Deploy → Manage deployments → Edit → New version → Deploy**.
 
@@ -81,7 +81,7 @@ npm run prep:seed   # optional, refuses to run in production
 
 To add past papers, see [PAST_PAPERS.md](PAST_PAPERS.md).
 
-For the live (production) sheet, never use `prep:seed`: it creates demo accounts with a shared password. Use `prep:bootstrap` instead. It creates the 10 subjects, your classes and the first admin, and prints the admin's one-time password:
+For the live (production) sheet, never use `prep:seed`: it creates demo accounts with a shared password. Use `prep:bootstrap` instead. It creates the 9 subjects, your classes and the first admin, and prints the admin's one-time password:
 
 ```bash
 npm run prep:bootstrap -- --admin-id A0001 --admin-name "Full Name" --classes "JHS 3A,JHS 3B" --year 2026/2027
@@ -95,7 +95,7 @@ Then log in as that admin, choose a new password, and import students on the Peo
 |---|---|
 | Users | Students, teachers and admins (ID, name, role, class, password hash, lockout and sign-in state) |
 | Classes | e.g. JHS 3A, year group, academic year |
-| Subjects | The 10 BECE subjects; French and Twi are marked by teachers |
+| Subjects | The 9 BECE subjects; French and Twi are marked by teachers |
 | TeacherSubjects | Which teacher takes which subject (and optionally which class) |
 | Papers | Past papers: subject, year, Paper 1 or 2 |
 | Questions | Question text, marks, type, draft or approved |

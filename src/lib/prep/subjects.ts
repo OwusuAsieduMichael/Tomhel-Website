@@ -7,7 +7,6 @@ const SHORT: Record<string, string> = {
   RME: "RME",
   COMP: "Computing",
   CTECH: "Career Technology",
-  CAD: "Creative Arts",
   FRE: "French",
   TWI: "Twi",
 };

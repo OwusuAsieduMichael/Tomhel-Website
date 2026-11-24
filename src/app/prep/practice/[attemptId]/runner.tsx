@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import type { Answers, RunnerData } from "@/lib/prep/practice/attempts";
 import { cn } from "@/lib/utils";
 import { saveAnswersAction, submitAttemptAction } from "../actions";
+import { QuestionText } from "@/components/prep/question-text";
 
 const AUTOSAVE_MS = 2500;
 
@@ -149,7 +150,7 @@ export function Runner({ data }: { data: RunnerData }) {
           </p>
         ) : null}
 
-        <p className="text-[17px] leading-normal font-semibold whitespace-pre-line">{q.text}</p>
+        <p className="text-[17px] leading-normal font-semibold whitespace-pre-line"><QuestionText text={q.text} /></p>
         {q.imageUrls.map((src) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={src} src={src} alt={`Diagram for question ${q.numberLabel}`} className="max-h-80 w-auto rounded-xl border border-prep-line bg-white object-contain" />
@@ -297,7 +298,7 @@ function McqOptions({
               </span>
               <span>
                 {right || wrong ? <span className="sr-only">{o.label}. </span> : null}
-                {o.text}
+                <QuestionText text={o.text} />
                 {right ? <span className="sr-only"> (correct answer)</span> : wrong ? <span className="sr-only"> (your answer, not correct)</span> : null}
               </span>
             </label>

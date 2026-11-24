@@ -9,6 +9,7 @@ import type { Highlight, PointResult } from "@/lib/prep/grading/theory";
 import { AttemptError, loadAttemptResults } from "@/lib/prep/practice/attempts";
 import { getStore } from "@/lib/prep/store";
 import { cn } from "@/lib/utils";
+import { QuestionText } from "@/components/prep/question-text";
 import { MarkQuery } from "./mark-query";
 
 export const metadata: Metadata = { title: "Results" };
@@ -163,19 +164,19 @@ function McqReview({ q, attemptId }: { q: Q; attemptId: string }) {
   const answer = q.options.find((o) => o.label === correct);
   return (
     <article className="flex flex-col gap-2 rounded-xl border border-prep-line bg-prep-surface p-3.5">
-      <p className="text-[15px] font-semibold">
+      <p className="text-[15px] font-semibold whitespace-pre-line">
         <span className="text-prep-muted">{q.numberLabel}. </span>
-        {q.text}
+        <QuestionText text={q.text} />
       </p>
       {awarded ? (
         <p className="flex items-start gap-2 text-sm text-prep-awarded">
-          <Check className="mt-0.5 size-4 shrink-0" aria-hidden /> {correct}. {answer?.text}
+          <Check className="mt-0.5 size-4 shrink-0" aria-hidden /> {correct}. <QuestionText text={answer?.text ?? ""} />
         </p>
       ) : (
         <>
-          <p className="text-sm text-prep-incorrect-ink">{chosen ? `Your answer: ${chosen.label}. ${chosen.text}` : "Not answered"}</p>
+          <p className="text-sm text-prep-incorrect-ink">{chosen ? <>Your answer: {chosen.label}. <QuestionText text={chosen.text} /></> : "Not answered"}</p>
           <p className="flex items-start gap-2 text-sm font-semibold text-prep-awarded">
-            <Check className="mt-0.5 size-4 shrink-0" aria-hidden /> Answer: {correct}. {answer?.text}
+            <Check className="mt-0.5 size-4 shrink-0" aria-hidden /> Answer: {correct}. <QuestionText text={answer?.text ?? ""} />
           </p>
         </>
       )}
@@ -237,7 +238,7 @@ function TheoryReview({ q, attemptId }: { q: Q; attemptId: string }) {
           <span className="text-sm font-semibold text-prep-muted">{fmtMarks(q.marks)} marks</span>
         )}
       </div>
-      <p className="text-[15px] font-semibold whitespace-pre-line">{q.text}</p>
+      <p className="text-[15px] font-semibold whitespace-pre-line"><QuestionText text={q.text} /></p>
 
       <section className="flex flex-col gap-2.5">
         <h3 className="text-sm font-bold tracking-wide text-prep-muted">YOUR ANSWER</h3>

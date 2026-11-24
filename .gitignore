@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Licensed past-paper sources and converted papers (never commit: the repo is public)
 /private/
+
+# Office lock files (created while a document is open in Word)
+~$*
+
+# Past-paper books must never be served from public/: keep them in private/pasco
+/public/PASCO/

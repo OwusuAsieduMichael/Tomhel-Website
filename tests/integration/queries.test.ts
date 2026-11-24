@@ -20,9 +20,9 @@ beforeAll(async () => {
 });
 
 describe("page queries", () => {
-  it("lists all 10 subjects for practice, with the two sample papers", async () => {
+  it("lists all 9 subjects for practice, with the two sample papers", async () => {
     const subjects = await getPracticePapersBySubject(store);
-    expect(subjects).toHaveLength(10);
+    expect(subjects).toHaveLength(9);
     expect(subjects.find((s) => s.code === "MATH")!.papers).toEqual([expect.objectContaining({ year: 2023, paperNo: 1, questionCount: 5 })]);
     expect(subjects.find((s) => s.code === "SCI")!.papers).toEqual([expect.objectContaining({ year: 2023, paperNo: 2, questionCount: 2 })]);
   });

@@ -1,5 +1,5 @@
 /**
- * First-time setup of a real (production) BECE Prep sheet: tabs, the 10 BECE subjects, your classes,
+ * First-time setup of a real (production) BECE Prep sheet: tabs, the 9 BECE subjects, your classes,
  * and the first admin account. No demo accounts, no shared passwords.
  *
  * Usage:

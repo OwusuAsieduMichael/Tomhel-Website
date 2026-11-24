@@ -30,6 +30,20 @@ Codes follow `SUBJECT-YEAR-P1-<number>`, so re-converting a corrected book updat
 
 If a new book doesn't convert cleanly, `--dump <page>` prints the text exactly as the converter sees it.
 
+### Other layouts the converter handles
+
+- **WordPub single-column books** (e.g. *Computing & ICT 2020–2025*): headings like "June 2025" then "COMPUTING 1". The column layout is detected per book; `--columns 1|2` forces it.
+- **Word `.doc` books** (e.g. *Science 1990–2021*): open each password-protected book once in Word and **Save As → Web Page, Filtered (.htm)** into `private/pasco/html/`, then pass the `.htm` file instead of a PDF. HTML keeps what plain text loses: underlining, superscripts and subscripts, tab-separated tables, and pictures (as `[image: …]`).
+- **Underlined words** ("the word underlined") become `<u>word</u>` in the question text, and the portal shows them underlined. In PDFs they are found from the thin lines drawn under the text.
+- **Section instructions** ("SECTION B: choose the one nearest in meaning…") and cloze passages are copied onto every question they apply to, since students may open any question on its own.
+- **Options A to E** (older papers), options in a table row ("31. seek ⇥ request ⇥ search ⇥ look"), and keys written "34. B – certified" or "36. E-mail address" (no letter).
+- **Answer-key misprints**: when the key's letter and its text disagree and the text is exactly another option, the text wins and the review list says so (e.g. English 2024 Q24 "paid back in his own coins" → C. swindled).
+- **Two sittings in one year** (Science 2015): the first sitting is kept; the portal holds one paper per year.
+
+### Choosing what to import
+
+`npx tsx scripts/pasco/select-papers.ts` collects the converted papers into `private/papers/ready/`. It prefers the newer edition where two books overlap, applies the hand-checked corrections listed in the script, leaves out questions without exactly one correct answer, holds back questions that need a picture, and validates every paper with the importer's rules. Then import `private/papers/ready/*.json`.
+
 ## 2. Theory papers (written by hand from the marking scheme)
 
 Theory questions can't be converted automatically. They depend on diagrams, sub-parts and "[ANY TWO]" style schemes that need judgement. Write them as JSON using the same format. `private/papers/SCI-2021-P2.json` (Science 2021 Paper 2, Section B) is the worked example. Each sub-part such as 3(b)(ii) is its own question, with marking points taken from the scheme:

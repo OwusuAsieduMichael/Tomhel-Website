@@ -13,6 +13,11 @@
  *   { action: "read",  tables: ["Users", ...] }        -> { success, tables: { Users: [[header...], [row...], ...] } }
  *   { action: "write", ops: [ ... ] }                  -> { success }
  *   { action: "setup", schema: { Users: ["id", ...] } } -> { success, created: [...], addedColumns: {...} }
+ *   { action: "putFile", name, mimeType, data: base64 } -> { success, id }   (question pictures, private Drive folder)
+ *   { action: "getFile", id }                           -> { success, mimeType, data: base64 }
+ *
+ * Optional Script Property: FILES_FOLDER_ID (otherwise a "Tomhel BECE Prep Files" folder is created
+ * next to the spreadsheet the first time a picture is saved).
  *
  * Write ops (applied together under a lock; if any op is invalid, nothing is written):
  *   { op: "insert", table, rows: [{ col: "text" }], unique: ["loginId"] }
@@ -50,6 +55,8 @@ function doPost(e) {
     if (payload.action === "read") return json_({ success: true, tables: readTables_(ss, payload.tables || []) });
     if (payload.action === "write") return json_(writeOps_(ss, payload.ops || []));
     if (payload.action === "setup") return json_(setup_(ss, payload.schema || {}));
+    if (payload.action === "putFile") return json_(putFile_(props, spreadsheetId, payload));
+    if (payload.action === "getFile") return json_(getFile_(props, spreadsheetId, payload.id));
     return json_({ success: false, message: "Unknown action." });
   } catch (error) {
     return json_({ success: false, message: error && error.message ? error.message : "Server error." });
@@ -145,6 +152,46 @@ function setup_(ss, schema) {
     sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).setNumberFormat("@");
   }
   return { success: true, created: created, addedColumns: addedColumns };
+}
+
+// ---------------------------------------------------------------------------
+// Files (question pictures). Kept in one private Drive folder; never shared.
+// The website fetches them with the secret and shows them only to logged-in users.
+// ---------------------------------------------------------------------------
+
+var FILES_FOLDER_NAME = "Tomhel BECE Prep Files";
+var MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+/** The files folder: FILES_FOLDER_ID if set, otherwise created next to the spreadsheet on first use. */
+function filesFolder_(props, spreadsheetId) {
+  var id = props.getProperty("FILES_FOLDER_ID");
+  if (id) return DriveApp.getFolderById(id);
+  var parents = DriveApp.getFileById(spreadsheetId).getParents();
+  var parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  var folder = parent.createFolder(FILES_FOLDER_NAME);
+  props.setProperty("FILES_FOLDER_ID", folder.getId());
+  return folder;
+}
+
+function putFile_(props, spreadsheetId, payload) {
+  if (!/^image\/(png|jpeg|gif|webp)$/.test(String(payload.mimeType || ""))) return { success: false, message: "Only PNG, JPEG, GIF or WebP pictures." };
+  var bytes = Utilities.base64Decode(String(payload.data || ""));
+  if (!bytes.length || bytes.length > MAX_FILE_BYTES) return { success: false, message: "Pictures must be under 5 MB." };
+  var name = String(payload.name || "picture").replace(/[^\w.\-]/g, "_").slice(0, 100);
+  var file = filesFolder_(props, spreadsheetId).createFile(Utilities.newBlob(bytes, payload.mimeType, name));
+  return { success: true, id: file.getId() };
+}
+
+function getFile_(props, spreadsheetId, id) {
+  var folderId = filesFolder_(props, spreadsheetId).getId();
+  var file = DriveApp.getFileById(String(id || ""));
+  // Only files in the portal's own folder: the secret must not open anything else in this Drive.
+  var parents = file.getParents();
+  var inFolder = false;
+  while (parents.hasNext()) if (parents.next().getId() === folderId) inFolder = true;
+  if (!inFolder) return { success: false, message: "Not found." };
+  var blob = file.getBlob();
+  return { success: true, mimeType: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
 }
 
 // ---------------------------------------------------------------------------
