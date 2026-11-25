@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
+  approveAllInSubject,
   approveAllOnPaper,
   exportPaper,
   getPaperOverview,
@@ -175,5 +176,35 @@ describe("getPaperOverview", () => {
     const row = (await paperBy(2023, 1))!;
     const o = (await getPaperOverview(db, row.id))!;
     expect(o.questions.map((q) => q.numberLabel)).toEqual(["1", "2", "3", "4", "5"]);
+  });
+});
+
+describe("approveAllInSubject", () => {
+  it("approves every draft of one subject across its years and papers, and nothing else", async () => {
+    const sub = (await db.read("subjects")).subjects;
+    const rme = sub.find((s) => s.code === "RME")!;
+    const mcq = (code: string, n: number) => ({
+      code: `${code}-${n}`,
+      numberLabel: String(n),
+      type: "mcq" as const,
+      text: `Question ${n}?`,
+      marks: 1,
+      imageUrls: [],
+      options: [
+        { label: "A", text: "yes", isCorrect: true },
+        { label: "B", text: "no", isCorrect: false },
+      ],
+      markingPoints: [],
+    });
+    for (const year of [2019, 2020]) {
+      await importPaper(db, { subjectCode: "RME", year, paperNo: 1, questions: [mcq(`RME-${year}-P1`, 1), mcq(`RME-${year}-P1`, 2)] });
+    }
+    await importPaper(db, { subjectCode: "COMP", year: 2020, paperNo: 1, questions: [mcq("COMP-2020-P1", 1)] });
+
+    expect(await approveAllInSubject(db, rme.id)).toBe(4);
+    for (const code of ["RME-2019-P1-1", "RME-2019-P1-2", "RME-2020-P1-1", "RME-2020-P1-2"]) expect(await statusOf(code)).toBe("approved");
+    expect(await statusOf("COMP-2020-P1-1")).toBe("draft");
+    // Nothing left to approve: a second tap changes nothing.
+    expect(await approveAllInSubject(db, rme.id)).toBe(0);
   });
 });
