@@ -138,6 +138,21 @@ function parseQuestions(allLines: string[]) {
       for (const target of items) if (target.n >= first && target.n <= last) target.preamble = preamble;
     }
   }
+  // The information for "Use the information to answer questions 4 and 5" is often printed just before that
+  // line, after the previous question's last option ("D. Length" then "In the diagram, P and Q are two sets").
+  // Lines after the last option that start a new sentence move to the questions the instruction names.
+  for (const [i, it] of items.entries()) {
+    const next = items[i + 1];
+    const instruction = next && forQuestion.get(next.n);
+    if (!instruction || forQuestion.get(it.n) === instruction) continue;
+    const lines = it.raw.split("\n");
+    const lastOption = lines.findLastIndex((l) => /^[A-E](?:\.\s|\)\s|\t)/.test(l));
+    const tail = lastOption >= 0 ? lines.slice(lastOption + 1).filter((l) => l.trim()) : [];
+    if (!tail.length || !/^[A-Z(]/.test(tail[0])) continue;
+    it.raw = lines.slice(0, lastOption + 1).join("\n");
+    const info = tail.join(" ").replace(/\s+/g, " ").trim();
+    for (const target of items) if (forQuestion.get(target.n) === instruction) target.preamble = [info, target.preamble].filter(Boolean).join(" ");
+  }
   return items;
 }
 
@@ -170,7 +185,9 @@ function parseKey(lines: string[]) {
   const text = lines.filter(keep).join(" ");
   const key = new Map<number, { label?: string; text: string; note?: string }>();
   // "12. B. text", "12. **B. text", "12. B – text", "12. B<tab>text", and sometimes just "12. text" with no letter.
-  for (const m of text.matchAll(/(?:^|\s)(\d{1,2})\.\s+(?:\**([A-E])(?:\s*(?:\.+|[–-])\s|\t))?(.*?)(?=\s\d{1,2}\.\s|$)/g)) {
+  // The space after the letter is not consumed, so an entry with only a letter ("11. B. 12. D. 285°")
+  // still ends at "12." instead of swallowing it.
+  for (const m of text.matchAll(/(?:^|\s)(\d{1,2})\.\s+(?:\**([A-E])(?:\s*(?:\.+|[–-])(?=\s|$)|(?=\t)))?(.*?)(?=\s\d{1,2}\.\s|$)/g)) {
     const n = Number(m[1]);
     // Numbering starting again means the key has ended (a theory paper with no heading of its own follows).
     if (key.size && n <= Math.max(...key.keys())) break;

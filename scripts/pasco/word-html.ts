@@ -10,7 +10,7 @@
  * section splitter needs.
  */
 import { readFileSync } from "node:fs";
-import { isNoise, sectionHead } from "./pdf-pages";
+import { isNoise, plainMathLetters, sectionHead } from "./pdf-pages";
 
 const SUPER: Record<string, string> = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "-": "⁻", "−": "⁻", "+": "⁺", n: "ⁿ" };
 const SUB: Record<string, string> = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
@@ -47,7 +47,7 @@ export function htmlToLines(html: string): string[] {
     .replace(/<\/td>/gi, "\t")
     .replace(/<br[^>]*>|<\/(?:p|h[1-6]|li|tr|div|table)>/gi, "\n")
     .replace(/<[^>]+>/g, "");
-  s = decode(s);
+  s = plainMathLetters(decode(s));
   return s
     .split("\n")
     .map((l) =>

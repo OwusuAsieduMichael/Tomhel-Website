@@ -6,7 +6,7 @@
  *   reads  private/papers/{comp,eng,soc,sci,2026,old}/*.json  (from npm run pasco:objectives)
  *   writes private/papers/ready/*.json, then: npm run prep:import -- private/papers/ready/*.json
  */
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describeIssues, paperSchema } from "../../src/lib/prep/admin/question-bank";
 
@@ -21,6 +21,7 @@ const sources: { dir: string; keep: (subject: string, year: number) => boolean }
   { dir: "eng", keep: () => true },
   { dir: "soc", keep: () => true },
   { dir: "sci", keep: () => true },
+  { dir: "math", keep: () => true },
   { dir: "2026", keep: (s) => s !== "MATH" },
   { dir: "old", keep: (s, y) => !(["ENG", "SOC", "COMP", "SCI"].includes(s) && y >= 2020) },
 ];
@@ -37,9 +38,6 @@ const corrections: Record<string, Fix> = {
     modelAnswer: "The Sun is at the centre of the solar system. (The printed key gives Mars, which is a slip.)",
     why: "The key says Mars and adds that the body at the centre is the Sun.",
   },
-  "SCI-2021-P1-26": { options: { D: "voltmeter" }, why: "The information for questions 27 and 28 was printed after this question's last option." },
-  "SCI-2021-P1-27": { textBefore: "A machine lifts a load of 100 N through a vertical distance of 2 m in 10 s.", why: "See SCI-2021-P1-26." },
-  "SCI-2021-P1-28": { textBefore: "A machine lifts a load of 100 N through a vertical distance of 2 m in 10 s.", why: "See SCI-2021-P1-26." },
 };
 
 const held: string[] = [];
@@ -51,9 +49,18 @@ for (const { dir, keep } of sources) {
     const p = JSON.parse(readFileSync(path.join(root, dir, f), "utf8"));
     if (!keep(p.subjectCode, p.year)) continue;
     const hasImage = (q: { text: string; options?: { text: string }[] }) => /\[image:/.test(q.text) || (q.options ?? []).some((o) => /\[image:/.test(o.text));
-    type Q = { code: string; text: string; options: { label: string; text: string; isCorrect: boolean }[] };
+    type Q = { code: string; numberLabel: string; text: string; options: { label: string; text: string; isCorrect: boolean }[] };
+    // Maths from a PDF: fractions are drawn as numerator, line, denominator, and come out wrong as text
+    // ("11 <u>3</u>"). Only questions that converted cleanly go in; the rest wait to be shown as pictures.
+    const reviewFile = path.join(root, dir, f.replace(/\.json$/, ".review.txt"));
+    const flagged = p.subjectCode === "MATH" && existsSync(reviewFile)
+      ? new Set([...readFileSync(reviewFile, "utf8").matchAll(/^Q(\d+):/gm)].map((m) => m[1]))
+      : new Set<string>();
+    const unclearMaths = (q: Q) =>
+      p.subjectCode === "MATH" &&
+      (flagged.has(q.numberLabel) || [q.text, ...q.options.map((o) => o.text)].some((t) => /<u>|[₀-₉⁰-⁹]\s|\s[a-z]$/.test(t)));
     const kept = p.questions.filter((q: Q) => {
-      if (needsPicture.has(q.code) || hasImage(q)) {
+      if (needsPicture.has(q.code) || hasImage(q) || unclearMaths(q)) {
         held.push(q.code);
         return false;
       }

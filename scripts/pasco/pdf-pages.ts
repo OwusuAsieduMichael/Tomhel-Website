@@ -17,6 +17,13 @@ const SUPER: Record<string, string> = { "0": "⁰", "1": "¹", "2": "²", "3": "
 const SUB: Record<string, string> = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
 const mapChars = (s: string, table: Record<string, string>) => ([...s].every((c) => table[c]) ? [...s].map((c) => table[c]).join("") : null);
 
+/**
+ * Maths italic letters (𝑥, 𝑦, 𝑚: U+1D400 to U+1D7FF) become plain letters, so "2𝑥 − 4" matches
+ * the answer key's "2x − 4" and reads normally on any device. Other characters are left alone
+ * (full NFKC would also flatten ² and ½).
+ */
+export const plainMathLetters = (s: string) => s.replace(/[\u{1D400}-\u{1D7FF}]/gu, (c) => c.normalize("NFKC"));
+
 /** Advert and footer lines printed on every page. */
 export const isNoise = (s: string) => /Dial \*\d+\*\d+#|passco\.com\.gh|WordPub|Word Publishers|All rights reserved|Unauthori[sz]ed distribution|^(Top|Bottom) of Form$/i.test(s);
 
@@ -75,7 +82,7 @@ function toLines(frags: Frag[], rules: Rule[] = []): string[] {
         out += out.endsWith("\t") ? s.trimStart() : s;
         end = f.x + f.w;
       }
-      return out
+      return plainMathLetters(out)
         .replace(/[^\S\t]+/g, " ")
         .replace(/ *\t[\s]*/g, "\t")
         .replace(/<\/u>(\s*)<u>/g, "$1")
