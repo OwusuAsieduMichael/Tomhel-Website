@@ -12,6 +12,7 @@ import {
   type ImportResult,
 } from "@/lib/prep/admin/people";
 import {
+  approveAllInSubject,
   approveAllOnPaper,
   importPaper,
   saveQuestion,
@@ -131,6 +132,14 @@ export async function approveAllAction(formData: FormData) {
   await requireRole("admin");
   const paperId = paperIdSchema.parse(formData.get("paperId"));
   await approveAllOnPaper(getStore(), paperId);
+  revalidatePath("/prep/admin", "layout");
+}
+
+/** One tap on the Questions page: every draft in a subject, all years and papers. */
+export async function approveSubjectAction(formData: FormData) {
+  await requireRole("admin");
+  const subjectId = paperIdSchema.parse(formData.get("subjectId"));
+  await approveAllInSubject(getStore(), subjectId);
   revalidatePath("/prep/admin", "layout");
 }
 

@@ -107,6 +107,7 @@ export async function listPapersWithCounts(store: Store) {
       const qs = questions.filter((q) => q.paperId === p.id);
       return {
         id: p.id,
+        subjectId: p.subjectId,
         subject: s?.name ?? "Unknown subject",
         sortOrder: s?.sortOrder ?? 999,
         year: p.year,

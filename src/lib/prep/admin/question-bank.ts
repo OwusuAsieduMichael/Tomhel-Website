@@ -384,6 +384,14 @@ export async function approveAllOnPaper(store: Store, paperId: string) {
   return drafts.length;
 }
 
+/** Approves every draft question of a subject, across all its years and papers, in one save. */
+export async function approveAllInSubject(store: Store, subjectId: string) {
+  const { questions } = await store.read("questions");
+  const drafts = questions.filter((q) => q.subjectId === subjectId && q.status === "draft");
+  await store.write(drafts.map((q) => update("questions", q.id, { status: "approved" })));
+  return drafts.length;
+}
+
 /** Paper header plus its questions, for the admin paper page. */
 export async function getPaperOverview(store: Store, paperId: string) {
   const { papers, subjects, ...bank } = await store.read("papers", "subjects", ...BANK_TABLES);
