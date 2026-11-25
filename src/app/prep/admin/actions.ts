@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   AccountError,
   createAccount,
-  importStudents,
+  importAccounts,
   resetPassword,
   setAccountActive,
   type ImportResult,
@@ -90,15 +90,24 @@ export type ImportFormState = { error?: string; result?: ImportResult };
 
 const MAX_CSV_BYTES = 512 * 1024;
 
-export async function importStudentsAction(_prev: ImportFormState, formData: FormData): Promise<ImportFormState> {
+/** Imports a list of accounts for the role chosen on the People page: students, teachers or admins. */
+export async function importAccountsAction(_prev: ImportFormState, formData: FormData): Promise<ImportFormState> {
   await requireRole("admin");
+  const role = z.enum(ROLES).safeParse(formData.get("role"));
+  if (!role.success) return { error: "Choose who the list is for: students, teachers or admins." };
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose a CSV file to upload." };
-  if (file.size > MAX_CSV_BYTES) return { error: "That file is too big. Class lists should be well under 500 KB." };
+  if (file.size > MAX_CSV_BYTES) return { error: "That file is too big. Lists should be well under 500 KB." };
 
-  const result = await importStudents(getStore(), await file.text());
-  if (!result.problems.length) revalidatePath("/prep/admin", "layout");
-  return { result };
+  try {
+    const result = await importAccounts(getStore(), await file.text(), role.data);
+    if (!result.problems.length) revalidatePath("/prep/admin", "layout");
+    return { result };
+  } catch (e) {
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
+    throw e;
+  }
 }
 
 // ---------------------------------------------------------------------------
