@@ -3,8 +3,10 @@ import {
   AccountError,
   createAccount,
   generateTempPassword,
+  importAccounts,
   importStudents,
   parseCsv,
+  parseAccountCsv,
   parseStudentCsv,
   resetPassword,
   setAccountActive,
@@ -133,5 +135,39 @@ describe("importStudents", () => {
     expect(result.created).toEqual([]);
     expect(result.problems.map((p) => p.line)).toEqual([3, 4]);
     expect(await user("S0500")).toBeUndefined();
+  });
+});
+
+describe("importAccounts for staff", () => {
+  it("creates teachers from a staff list (no class), renames existing ones, keeps passwords", async () => {
+    const result = await importAccounts(store, ["Staff ID,Name", "T090,Kofi Mensah", "T001,Ama Mensah-Owusu"].join("\n"), "teacher");
+    expect(result.problems).toEqual([]);
+    expect(result.role).toBe("teacher");
+    expect(result.created).toEqual([expect.objectContaining({ loginId: "T090", name: "Kofi Mensah", className: "" })]);
+    expect(result.updated).toBe(1);
+
+    const t090 = (await user("T090"))!;
+    expect(t090).toMatchObject({ role: "teacher", classId: null, mustChangePassword: true });
+    expect((await user("T001"))!.name).toBe("Ama Mensah-Owusu");
+    expect((await authenticate(store, "T001", PASSWORD)).ok).toBe(true); // password untouched
+    expect((await authenticate(store, "T090", result.created[0].tempPassword)).ok).toBe(true);
+  });
+
+  it("creates admins too", async () => {
+    const result = await importAccounts(store, "Staff ID,Name\nA0090,Deputy Head\n", "admin");
+    expect(result.problems).toEqual([]);
+    expect((await user("A0090"))!.role).toBe("admin");
+  });
+
+  it("refuses an ID that belongs to another role, and names the missing columns", async () => {
+    const clash = await importAccounts(store, "Staff ID,Name\nS0006,Not A Teacher\n", "teacher");
+    expect(clash.problems).toEqual([{ line: 2, message: "S0006 belongs to a student account." }]);
+    expect((await user("S0006"))!.role).toBe("student");
+
+    const asStudents = await importAccounts(store, "Student ID,Name,Class\nT090,Kofi Mensah,JHS 3A\n", "student");
+    expect(asStudents.problems[0].message).toContain("staff account");
+
+    expect(parseAccountCsv("Name\nKofi", "teacher").problems[0].message).toBe("The header row needs these columns: Staff ID.");
+    expect(parseAccountCsv("Staff ID,Name\n", "admin").problems[0].message).toBe("No admins found under the header row.");
   });
 });

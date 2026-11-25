@@ -1,12 +1,12 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { Download, FileUp, UserPlus } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Field, FormMessage, prepButton, SelectField } from "@/components/prep/ui";
 import {
   createAccountAction,
-  importStudentsAction,
+  importAccountsAction,
   resetPasswordAction,
   setActiveAction,
   type AccountFormState,
@@ -15,6 +15,13 @@ import {
 } from "../actions";
 
 type ClassOption = { id: string; name: string };
+type Role = "student" | "teacher" | "admin";
+
+const ROLE_LABEL: Record<Role, { one: string; many: string; id: string }> = {
+  student: { one: "student", many: "students", id: "Student ID" },
+  teacher: { one: "teacher", many: "teachers", id: "Staff ID" },
+  admin: { one: "admin", many: "admins", id: "Staff ID" },
+};
 
 /** Shows a temporary password once. It can't be looked up again (only its hash is stored). */
 function IssuedPasswordNote({ issued }: { issued: IssuedPassword }) {
@@ -29,28 +36,59 @@ function IssuedPasswordNote({ issued }: { issued: IssuedPassword }) {
   );
 }
 
-export function AddAccountForm({ classes }: { classes: ClassOption[] }) {
+/**
+ * "Add people": choose the role first, then add one account or import a list of them.
+ * Both forms follow the role, and start afresh when it changes.
+ */
+export function AddPeoplePanel({ classes }: { classes: ClassOption[] }) {
+  const [role, setRole] = useState<Role>("student");
+  const [mode, setMode] = useState<"one" | "list">("one");
+  const tab = (m: typeof mode, icon: React.ReactNode, label: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={mode === m}
+      onClick={() => setMode(m)}
+      className={cn(
+        "inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors [&_svg]:size-4",
+        mode === m ? "bg-prep-surface text-prep-ink shadow-sm" : "text-prep-muted hover:text-prep-ink",
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="space-y-4">
+      <SelectField label="Role" name="role-picker" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+        <option value="admin">Admin</option>
+      </SelectField>
+      <div role="tablist" aria-label={`How to add ${ROLE_LABEL[role].many}`} className="flex gap-1 rounded-xl bg-prep-ground p-1">
+        {tab("one", <UserPlus aria-hidden />, `Add one ${ROLE_LABEL[role].one}`)}
+        {tab("list", <FileUp aria-hidden />, `Import ${ROLE_LABEL[role].many}`)}
+      </div>
+      {mode === "one" ? <AddAccountForm key={role} role={role} classes={classes} /> : <ImportAccountsForm key={role} role={role} />}
+    </div>
+  );
+}
+
+export function AddAccountForm({ role, classes }: { role: Role; classes: ClassOption[] }) {
   const [state, action, pending] = useActionState<AccountFormState, FormData>(createAccountAction, {});
-  const [role, setRole] = useState("student");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state.issued) {
-      formRef.current?.reset();
-      setRole("student");
-    }
+    if (state.issued) formRef.current?.reset();
   }, [state]);
 
   return (
     <form ref={formRef} action={action} className="space-y-4" noValidate>
       <FormMessage error={state.error} />
       {state.issued ? <IssuedPasswordNote issued={state.issued} /> : null}
-      <SelectField label="Role" name="role" value={role} onChange={(e) => setRole(e.target.value)}>
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
-        <option value="admin">Admin</option>
-      </SelectField>
-      <Field label={role === "student" ? "Student ID" : "Staff ID"} name="loginId" autoCapitalize="characters" spellCheck={false} required />
+      <input type="hidden" name="role" value={role} />
+      <Field label={ROLE_LABEL[role].id} name="loginId" autoCapitalize="characters" spellCheck={false} required />
       <Field label="Full name" name="name" autoComplete="off" required />
       {role === "student" ? (
         <SelectField label="Class" name="classId" defaultValue="" required>
@@ -65,7 +103,7 @@ export function AddAccountForm({ classes }: { classes: ClassOption[] }) {
         </SelectField>
       ) : null}
       <button type="submit" className={prepButton()} disabled={pending}>
-        {pending ? "Adding…" : "Add account"}
+        {pending ? "Adding…" : `Add ${ROLE_LABEL[role].one}`}
       </button>
     </form>
   );
@@ -75,47 +113,67 @@ function csvCell(v: string) {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
-function downloadPasswords(rows: { loginId: string; name: string; className: string; tempPassword: string }[]) {
+function downloadPasswords(role: Role, rows: { loginId: string; name: string; className: string; tempPassword: string }[]) {
+  const student = role === "student";
   const lines = [
-    "Student ID,Name,Class,Temporary password",
-    ...rows.map((r) => [r.loginId, r.name, r.className, r.tempPassword].map(csvCell).join(",")),
+    student ? "Student ID,Name,Class,Temporary password" : "Staff ID,Name,Temporary password",
+    ...rows.map((r) => (student ? [r.loginId, r.name, r.className, r.tempPassword] : [r.loginId, r.name, r.tempPassword]).map(csvCell).join(",")),
   ];
   const url = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "new-student-passwords.csv";
+  a.download = `new-${ROLE_LABEL[role].one}-passwords.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-export function ImportStudentsForm() {
-  const [state, action, pending] = useActionState<ImportFormState, FormData>(importStudentsAction, {});
+/** A blank list with the right header row, so the admin can fill it in Excel or Google Sheets. */
+function downloadTemplate(role: Role) {
+  const header = role === "student" ? "Student ID,Name,Class" : "Staff ID,Name";
+  const url = URL.createObjectURL(new Blob([header + "\r\n"], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${ROLE_LABEL[role].many}-list.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function ImportAccountsForm({ role }: { role: Role }) {
+  const [state, action, pending] = useActionState<ImportFormState, FormData>(importAccountsAction, {});
   const r = state.result;
+  const { many, id } = ROLE_LABEL[role];
+  const columns = role === "student" ? `${id}, Name, Class` : `${id}, Name`;
 
   return (
     <div className="space-y-4">
       <form action={action} className="space-y-4" noValidate>
         <FormMessage error={state.error} />
+        <input type="hidden" name="role" value={role} />
         <div className="space-y-1.5">
-          <label htmlFor="import-file" className="block text-sm font-semibold">
-            Class list (CSV)
+          <label htmlFor={`import-file-${role}`} className="block text-sm font-semibold">
+            {role === "student" ? "Class list (CSV)" : `List of ${many} (CSV)`}
           </label>
           <input
-            id="import-file"
+            id={`import-file-${role}`}
             name="file"
             type="file"
             accept=".csv,text/csv"
             required
-            aria-describedby="import-hint"
+            aria-describedby={`import-hint-${role}`}
             className="block w-full text-sm file:mr-3 file:min-h-11 file:rounded-xl file:border file:border-prep-line file:bg-prep-surface file:px-4 file:font-semibold"
           />
-          <p id="import-hint" className="text-sm text-prep-muted">
-            Columns: Student ID, Name, Class. Export from Excel or Google Sheets as CSV. Existing students are moved or renamed; their
-            passwords stay the same.
+          <p id={`import-hint-${role}`} className="text-sm text-prep-muted">
+            Columns: {columns}. Export from Excel or Google Sheets as CSV.{" "}
+            {role === "student"
+              ? "Existing students are moved or renamed; their passwords stay the same."
+              : `Existing ${many} are renamed; their passwords stay the same. Assign teachers' subjects and classes afterwards.`}{" "}
+            <button type="button" onClick={() => downloadTemplate(role)} className="font-semibold text-prep-primary underline">
+              Download a blank list
+            </button>
           </p>
         </div>
         <button type="submit" className={prepButton({ variant: "secondary" })} disabled={pending}>
-          {pending ? "Importing…" : "Import"}
+          {pending ? "Importing…" : `Import ${many}`}
         </button>
       </form>
 
@@ -142,7 +200,7 @@ export function ImportStudentsForm() {
               <p className="text-prep-muted">
                 Download the temporary passwords now. They are shown only once and can&apos;t be looked up later.
               </p>
-              <button type="button" className={prepButton()} onClick={() => downloadPasswords(r.created)}>
+              <button type="button" className={prepButton()} onClick={() => downloadPasswords(r.role, r.created)}>
                 <Download aria-hidden /> Download passwords (CSV)
               </button>
             </>

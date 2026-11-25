@@ -15,7 +15,7 @@ import {
 
 /**
  * Account management for admins: create accounts, reset passwords, switch accounts on/off,
- * and import students from a class list. Callers (server actions) must check the admin role first.
+ * and import students (class list) or staff (staff list). Callers (server actions) must check the admin role first.
  */
 
 // No 0/o/1/l/i: temporary passwords are read off paper or a screen by students.
@@ -128,10 +128,13 @@ export async function setAccountActive(store: Store, actorId: string, userId: st
 }
 
 // ---------------------------------------------------------------------------
-// Class list import (CSV)
+// Account list import (CSV): students from a class list, or staff (teachers, admins) from a staff list
 // ---------------------------------------------------------------------------
 
-export type StudentRow = { line: number; loginId: string; name: string; className: string };
+/** One account from the file. `className` is set for students only. */
+export type AccountRow = { line: number; loginId: string; name: string; className: string };
+/** Kept for the class-list code and tests: a student row always has a class. */
+export type StudentRow = AccountRow;
 export type RowProblem = { line: number; message: string };
 
 /** Minimal RFC 4180 CSV: quoted fields, doubled quotes, commas and newlines inside quotes. */
@@ -140,7 +143,7 @@ export function parseCsv(text: string): string[][] {
   let row: string[] = [];
   let field = "";
   let quoted = false;
-  const src = text.replace(/^﻿/, "");
+  const src = text.replace(/^\uFEFF/, "");
 
   for (let i = 0; i < src.length; i++) {
     const ch = src[i];
@@ -170,16 +173,26 @@ export function parseCsv(text: string): string[][] {
 }
 
 const HEADER_ALIASES: Record<"loginId" | "name" | "className", string[]> = {
-  loginId: ["student id", "id", "login id", "studentid"],
-  name: ["name", "full name", "student name"],
+  loginId: ["student id", "staff id", "teacher id", "admin id", "id", "login id", "studentid", "staffid"],
+  name: ["name", "full name", "student name", "staff name", "teacher name"],
   className: ["class", "class name"],
 };
 
+/** What each role's list must contain, as shown to the admin. */
+export const IMPORT_COLUMNS: Record<Role, string[]> = {
+  student: ["Student ID", "Name", "Class"],
+  teacher: ["Staff ID", "Name"],
+  admin: ["Staff ID", "Name"],
+};
+
+const ROLE_NOUN: Record<Role, string> = { student: "students", teacher: "teachers", admin: "admins" };
+
 /**
- * Reads a class list with a header row containing Student ID, Name and Class (any order,
- * any case; extra columns ignored). Blank lines are skipped. Returns valid rows and per-line problems.
+ * Reads an account list with a header row (any order, any case; extra columns ignored). Students need
+ * Student ID, Name and Class; teachers and admins need an ID column and Name. Blank lines are skipped.
+ * Returns valid rows and per-line problems.
  */
-export function parseStudentCsv(text: string): { rows: StudentRow[]; problems: RowProblem[] } {
+export function parseAccountCsv(text: string, role: Role): { rows: AccountRow[]; problems: RowProblem[] } {
   const table = parseCsv(text);
   const problems: RowProblem[] = [];
   const headerIndex = table.findIndex((r) => r.some((c) => c.trim() !== ""));
@@ -187,10 +200,8 @@ export function parseStudentCsv(text: string): { rows: StudentRow[]; problems: R
 
   const header = table[headerIndex].map((h) => h.trim().toLowerCase());
   const col = (key: keyof typeof HEADER_ALIASES) => header.findIndex((h) => HEADER_ALIASES[key].includes(h));
-  const cols = { loginId: col("loginId"), name: col("name"), className: col("className") };
-  const missing = Object.entries(cols)
-    .filter(([, i]) => i === -1)
-    .map(([k]) => ({ loginId: "Student ID", name: "Name", className: "Class" })[k as keyof typeof cols]);
+  const cols = { loginId: col("loginId"), name: col("name"), className: role === "student" ? col("className") : -2 };
+  const missing = IMPORT_COLUMNS[role].filter((_, i) => [cols.loginId, cols.name, cols.className][i] === -1);
   if (missing.length) {
     return {
       rows: [],
@@ -198,18 +209,19 @@ export function parseStudentCsv(text: string): { rows: StudentRow[]; problems: R
     };
   }
 
-  const rows: StudentRow[] = [];
+  const rows: AccountRow[] = [];
   const seen = new Map<string, number>();
+  const required = IMPORT_COLUMNS[role].join(", ").replace(/, ([^,]+)$/, " and $1");
   for (let i = headerIndex + 1; i < table.length; i++) {
     const cells = table[i];
     if (cells.every((c) => c.trim() === "")) continue;
     const line = i + 1;
     const loginId = normaliseLoginId(cells[cols.loginId] ?? "");
     const name = (cells[cols.name] ?? "").trim().replace(/\s+/g, " ");
-    const className = (cells[cols.className] ?? "").trim().replace(/\s+/g, " ");
+    const className = role === "student" ? (cells[cols.className] ?? "").trim().replace(/\s+/g, " ") : "";
 
-    if (!loginId || !name || !className) {
-      problems.push({ line, message: "Student ID, Name and Class are all required." });
+    if (!loginId || !name || (role === "student" && !className)) {
+      problems.push({ line, message: `${required} are all required.` });
     } else if (!LOGIN_ID_PATTERN.test(loginId)) {
       problems.push({ line, message: `"${loginId}" is not a valid ID (letters, numbers and dashes only).` });
     } else if (seen.has(loginId)) {
@@ -219,11 +231,15 @@ export function parseStudentCsv(text: string): { rows: StudentRow[]; problems: R
       rows.push({ line, loginId, name, className });
     }
   }
-  if (!rows.length && !problems.length) problems.push({ line: headerIndex + 1, message: "No students found under the header row." });
+  if (!rows.length && !problems.length) problems.push({ line: headerIndex + 1, message: `No ${ROLE_NOUN[role]} found under the header row.` });
   return { rows, problems };
 }
 
+/** A class list: Student ID, Name and Class. */
+export const parseStudentCsv = (text: string) => parseAccountCsv(text, "student");
+
 export type ImportResult = {
+  role: Role;
   created: { loginId: string; name: string; className: string; tempPassword: string }[];
   updated: number;
   unchanged: number;
@@ -231,25 +247,30 @@ export type ImportResult = {
 };
 
 /**
- * Creates new students (with temporary passwords) and updates the name/class of existing ones.
- * Existing passwords are never touched. All-or-nothing: if any row has a problem, nothing is saved.
+ * Creates new accounts of one role (with temporary passwords) and updates existing ones: name, and class for
+ * students. Existing passwords are never touched. An ID that belongs to an account with a different role is a
+ * problem, not a change of role. All-or-nothing: if any row has a problem, nothing is saved.
  */
-export async function importStudents(store: Store, csvText: string): Promise<ImportResult> {
-  const { rows, problems } = parseStudentCsv(csvText);
-  const empty = { created: [], updated: 0, unchanged: 0 };
+export async function importAccounts(store: Store, csvText: string, role: Role): Promise<ImportResult> {
+  const { rows, problems } = parseAccountCsv(csvText, role);
+  const empty = { role, created: [], updated: 0, unchanged: 0 };
   if (problems.length) return { ...empty, problems };
 
   const { users, classes } = await store.read("users", "classes");
   const classMap = classIdsByName(classes);
   const byLogin = new Map(users.map((u) => [u.loginId.toUpperCase(), u]));
+  const classOf = (r: AccountRow) => (role === "student" ? classMap.get(r.className.toUpperCase())! : null);
 
   for (const r of rows) {
-    if (!classMap.has(r.className.toUpperCase())) {
+    if (role === "student" && !classMap.has(r.className.toUpperCase())) {
       problems.push({ line: r.line, message: `There is no class called "${r.className}". Add it first or fix the spelling.` });
     }
     const u = byLogin.get(r.loginId);
-    if (u && u.role !== "student") {
-      problems.push({ line: r.line, message: `${r.loginId} belongs to a staff account.` });
+    if (u && u.role !== role) {
+      problems.push({
+        line: r.line,
+        message: u.role === "student" ? `${r.loginId} belongs to a student account.` : `${r.loginId} belongs to a staff account (${u.role}).`,
+      });
     }
   }
   if (problems.length) return { ...empty, problems };
@@ -266,14 +287,7 @@ export async function importStudents(store: Store, csvText: string): Promise<Imp
   const ops: WriteOp[] = [];
   if (toCreate.length) {
     const newRows = toCreate.map((r) =>
-      newUserRow({
-        loginId: r.loginId,
-        name: r.name,
-        role: "student",
-        classId: classMap.get(r.className.toUpperCase())!,
-        passwordHash: r.passwordHash,
-        mustChangePassword: true,
-      }),
+      newUserRow({ loginId: r.loginId, name: r.name, role, classId: classOf(r), passwordHash: r.passwordHash, mustChangePassword: true }),
     );
     ops.push(insert("users", newRows, { unique: ["loginId"] }));
   }
@@ -283,11 +297,11 @@ export async function importStudents(store: Store, csvText: string): Promise<Imp
   for (const r of rows) {
     const u = byLogin.get(r.loginId);
     if (!u) continue;
-    const classId = classMap.get(r.className.toUpperCase())!;
-    if (u.name === r.name && u.classId === classId) {
+    const classId = classOf(r);
+    if (u.name === r.name && (role !== "student" || u.classId === classId)) {
       unchanged++;
     } else {
-      ops.push(update("users", u.id, { name: r.name, classId }));
+      ops.push(update("users", u.id, role === "student" ? { name: r.name, classId } : { name: r.name }));
       updated++;
     }
   }
@@ -302,9 +316,13 @@ export async function importStudents(store: Store, csvText: string): Promise<Imp
   }
 
   return {
+    role,
     created: toCreate.map(({ loginId, name, className, tempPassword }) => ({ loginId, name, className, tempPassword })),
     updated,
     unchanged,
     problems: [],
   };
 }
+
+/** Students from a class list (Student ID, Name, Class). */
+export const importStudents = (store: Store, csvText: string) => importAccounts(store, csvText, "student");

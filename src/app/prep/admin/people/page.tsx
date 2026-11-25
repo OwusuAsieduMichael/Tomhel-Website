@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/prep/auth/current-user";
 import { getStore } from "@/lib/prep/store";
 import { roleLabel } from "@/lib/prep/nav";
 import { listClassesWithCounts, listPeople } from "@/lib/prep/queries";
-import { AccountRowActions, AddAccountForm, ImportStudentsForm } from "./people-forms";
+import { AccountRowActions, AddPeoplePanel } from "./people-forms";
 
 export const metadata: Metadata = { title: "People" };
 
@@ -21,16 +21,10 @@ export default async function PeoplePage() {
     <div className="space-y-8">
       <PageHeading title="People" description={`${people.length} accounts`} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <PrepCard>
-          <h2 className="mb-4 text-lg font-bold">Add an account</h2>
-          <AddAccountForm classes={classes} />
-        </PrepCard>
-        <PrepCard>
-          <h2 className="mb-4 text-lg font-bold">Import students from a class list</h2>
-          <ImportStudentsForm />
-        </PrepCard>
-      </div>
+      <PrepCard className="max-w-2xl">
+        <h2 className="mb-4 text-lg font-bold">Add people</h2>
+        <AddPeoplePanel classes={classes} />
+      </PrepCard>
 
       <section aria-labelledby="accounts-heading" className="space-y-3">
         <h2 id="accounts-heading" className="text-lg font-bold">
