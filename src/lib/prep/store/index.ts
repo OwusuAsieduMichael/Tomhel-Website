@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { LocalFileBackend, type Backend, type RawOp } from "./backend";
+import { LocalFileBackend, type Backend, type RawOp, type StoredFile } from "./backend";
 import { decodeSheet, encodeRow, sheetSchema } from "./codec";
 import { GasBackend } from "./gas-backend";
 import { tables, type RowOf, type TableName } from "./schema";
 
-export { StoreConflictError, StoreNotFoundError } from "./backend";
+export { FILE_ID, PICTURE_TYPES, StoreConflictError, StoreNotFoundError, type StoredFile } from "./backend";
 export * from "./schema";
 
 /** One change in a write batch. Build with insert / update / remove. */
@@ -48,6 +48,15 @@ export class Store {
   /** Creates missing tabs and columns. Safe to run any time. */
   setup() {
     return this.backend.setup(sheetSchema());
+  }
+
+  /** Saves a question picture; returns its id for `{{img:id}}` in question text. */
+  putFile(file: StoredFile & { name: string }) {
+    return this.backend.putFile(file);
+  }
+
+  getFile(id: string) {
+    return this.backend.getFile(id);
   }
 }
 

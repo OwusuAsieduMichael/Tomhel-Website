@@ -61,7 +61,8 @@ const keep = (l: string) => !SKIP.test(l) && !isHeadingLine(l);
 const INSTRUCTION = /^(PART [A-F]\b|SECTION [A-H]\b|\[?UNIT [IVX\d]+\]?$|LEXIS AND STRUCTURE|ORAL LANGUAGE|From the (options|alternatives|list)|Choose from|In each of the following|In the following passage|Use the (information|diagram|table|figure|map|passage)|Study the (information|diagram|table|figure|map)|The passage below|Read the (following|passage)|Below (are|is)|For each (question|of the following))/i;
 /** Lines that only name a part or section; dropped from the instruction text. */
 const SECTION_NAME = /^(PART [A-F]|SECTION [A-H]|\[?UNIT [IVX\d]+\]?|LEXIS AND STRUCTURE|ORAL LANGUAGE)$/i;
-const QUESTION_LINE = /^\d{1,2}\.\s/;
+/** "12. text", or "12." alone on its line above a picture (older Maths papers). */
+const QUESTION_LINE = /^\d{1,2}\.(\s|$)/;
 /** An options table row: "31. seek	request	search	look" (cells are tab-separated; a cell can be missing). */
 const CLOZE_ROW = /^(\d{1,2})\.\s*([^\t]+(?:\t[^\t]+){2,4})$/;
 
@@ -99,7 +100,7 @@ function liftInstructions(lines: string[]) {
       seen.add(n);
       continue;
     }
-    const q = /^(\d{1,2})\.\s/.exec(raw);
+    const q = /^(\d{1,2})\.(?:\s|$)/.exec(raw);
     if (q) seen.add(Number(q[1]));
     if (!block && INSTRUCTION.test(raw) && !q) block = [];
     if (block) block.push(raw.replace(/\t/g, " "));
@@ -187,7 +188,7 @@ function parseKey(lines: string[]) {
   // "12. B. text", "12. **B. text", "12. B – text", "12. B<tab>text", and sometimes just "12. text" with no letter.
   // The space after the letter is not consumed, so an entry with only a letter ("11. B. 12. D. 285°")
   // still ends at "12." instead of swallowing it.
-  for (const m of text.matchAll(/(?:^|\s)(\d{1,2})\.\s+(?:\**([A-E])(?:\s*(?:\.+|[–-])(?=\s|$)|(?=\t)))?(.*?)(?=\s\d{1,2}\.\s|$)/g)) {
+  for (const m of text.matchAll(/(?:^|\s)(\d{1,2})\.\s+(?:\**([A-E])(?:\s*(?:\.+|\)|[–-])(?=\s|$)|(?=\t)))?(.*?)(?=\s\d{1,2}\.\s|$)/g)) {
     const n = Number(m[1]);
     // Numbering starting again means the key has ended (a theory paper with no heading of its own follows).
     if (key.size && n <= Math.max(...key.keys())) break;
@@ -241,8 +242,13 @@ async function main() {
           flag(byText ? `answer key gives no letter, only "${answer.text}": marked option ${byText.label}.` : `answer key gives no letter, and "${answer.text}" matches no option.`);
         } else {
           correct = answer.label;
-          const chosen = parts.options.find((o) => o.label === answer.label)!;
-          if (answer.text && norm(chosen.text) !== norm(answer.text)) {
+          const chosen = parts.options.find((o) => o.label === answer.label);
+          // A picture (an equation) can't be compared as text: the key's own copy is a different file.
+          const pictures = /\[image:/.test((chosen?.text ?? "") + answer.text);
+          if (!chosen) {
+            correct = byText?.label;
+            flag(`answer key says ${answer.label}, but the question has no option ${answer.label}` + (byText ? `; its text is option ${byText.label}: marked ${byText.label}.` : "."));
+          } else if (answer.text && !pictures && norm(chosen.text) !== norm(answer.text)) {
             if (byText) {
               correct = byText.label;
               flag(`answer key says ${answer.label}. "${answer.text}", but that text is option ${byText.label} (option ${answer.label} reads "${chosen.text}"): marked ${byText.label}. Check.`);
@@ -251,7 +257,9 @@ async function main() {
         }
         if (answer.note) flag(`the answer key adds "${answer.note}". Check which option is right.`);
       }
-      if (/diagram|figure|illustrat|shown below|graph|table below/i.test(text)) flag("mentions a diagram, which is not imported: add an image link or leave it out.");
+      if (/diagram|figure|illustrat|shown below|graph|table below/i.test(text) && !/\[image:/.test(text)) {
+        flag("mentions a diagram, but the book gives no picture for it: add one or leave the question out.");
+      }
       if (/�/.test(it.raw)) flag("contains an unreadable character");
       if (/underlined/i.test(text) && !/<u>/.test(stem)) flag("refers to an underlined word, but no underline was found: mark it as <u>word</u>.");
 
@@ -289,6 +297,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
+  console.error(e instanceof Error ? (process.env.DEBUG ? e.stack : e.message) : e);
   process.exit(1);
 });

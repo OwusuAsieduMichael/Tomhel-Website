@@ -23,6 +23,13 @@ const decode = (s: string) =>
     e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : (ENTITIES[e.toLowerCase()] ?? m),
   );
 
+/** src, width and height of an <img> tag's attributes. */
+const imgAttrs = (attrs: string) => ({
+  src: /\bsrc="([^"]+)"/i.exec(attrs)?.[1],
+  w: Number(/\bwidth="?(\d+)/i.exec(attrs)?.[1] ?? 0),
+  h: Number(/\bheight="?(\d+)/i.exec(attrs)?.[1] ?? 0),
+});
+
 /** Underline markers survive tag stripping as these private characters, then become `<u>`/`</u>` again. */
 const U_OPEN = "\u{F0001}";
 const U_CLOSE = "\u{F0002}";
@@ -39,7 +46,17 @@ export function htmlToLines(html: string): string[] {
     .replace(/<sub[^>]*>([^<]*)<\/sub>/gi, (_, t: string) => script(decode(t), SUB, `_${t}`))
     .replace(/<span[^>]*vertical-align:\s*super[^>]*>([^<]*)<\/span>/gi, (_, t: string) => script(decode(t), SUPER, `^${t}`))
     .replace(/<span[^>]*vertical-align:\s*sub[^>]*>([^<]*)<\/span>/gi, (_, t: string) => script(decode(t), SUB, `_${t}`))
-    .replace(/<img[^>]*\bsrc="([^"]+)"[^>]*>/gi, (_, src: string) => ` [image: ${src}] `)
+    // Word saves each equation twice, side by side: a sharper copy, then the one sized as printed.
+    // Same shape means the same picture: keep the sharper file at the printed size.
+    .replace(/<img([^>]*)>\s*<img([^>]*)>/gi, (both, a: string, b: string) => {
+      const [pa, pb] = [imgAttrs(a), imgAttrs(b)];
+      const sameShape = pa.w && pa.h && pb.w && pb.h && Math.abs(pa.w / pa.h - pb.w / pb.h) < 0.05 * (pb.w / pb.h);
+      return sameShape ? ` [image: ${pa.src}|${pb.w}|${pb.h}] ` : both;
+    })
+    .replace(/<img([^>]*)>/gi, (_, a: string) => {
+      const p = imgAttrs(a);
+      return p.src ? ` [image: ${p.src}${p.w && p.h ? `|${p.w}|${p.h}` : ""}] ` : " ";
+    })
     // Word tab stops: table-like rows such as the cloze options "31. seek  request  search  look".
     .replace(/<span[^>]*mso-tab-count:\s*\d+[^>]*>[^<]*<\/span>/gi, "\t")
     .replace(/<u\b[^>]*>/gi, U_OPEN)
@@ -61,6 +78,8 @@ export function htmlToLines(html: string): string[] {
         .replace(/<u>(\s+)/g, "$1<u>")
         .replace(/(\s+)<\/u>/g, "</u>$1")
         .replace(/^\t+|\t+$/g, "")
+        // A fraction typed as a raised and a lowered letter ("^a/_b") reads as a/b.
+        .replace(/\^([^\s/^_]+)\s*\/\s*_([^\s/^_]+)/g, "$1/$2")
         .trim(),
     )
     .filter((l) => l && l !== "▪" && !isNoise(l));

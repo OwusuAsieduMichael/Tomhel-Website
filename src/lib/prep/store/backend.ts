@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
@@ -16,12 +17,23 @@ export type RawOp =
   | { op: "update"; table: string; id: string; set: Record<string, string> }
   | { op: "delete"; table: string; ids: string[] };
 
+/** A stored file (question pictures). */
+export type StoredFile = { mimeType: string; data: Buffer };
+
 export interface Backend {
   read(sheets: string[]): Promise<RawTables>;
   write(ops: RawOp[]): Promise<void>;
   /** Creates missing tabs and adds missing columns. Never removes anything. */
   setup(schema: Record<string, string[]>): Promise<{ created: string[]; addedColumns: Record<string, string[]> }>;
+  /** Saves a picture and returns its id. */
+  putFile(file: StoredFile & { name: string }): Promise<string>;
+  /** The picture with this id, or null if there is none. */
+  getFile(id: string): Promise<StoredFile | null>;
 }
+
+/** Picture ids: Drive file ids, or the local backends' own. Letters, digits, "-" and "_" only. */
+export const FILE_ID = /^[A-Za-z0-9_-]{10,100}$/;
+export const PICTURE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
 /** A unique column (e.g. loginId) already has this value. */
 export class StoreConflictError extends Error {
@@ -79,7 +91,28 @@ export function loadAppsScript(): GasPure {
 const clone = (t: string[][]) => t.map((r) => [...r]);
 
 export class MemoryBackend implements Backend {
+  private files = new Map<string, StoredFile>();
+
   constructor(protected data: RawTables = {}) {}
+
+  async putFile(file: StoredFile & { name: string }) {
+    if (!PICTURE_TYPES.includes(file.mimeType)) throw new Error("Only PNG, JPEG, GIF or WebP pictures.");
+    const id = `local_${randomUUID().replace(/-/g, "")}`;
+    this.saveFile(id, { mimeType: file.mimeType, data: file.data });
+    return id;
+  }
+
+  async getFile(id: string) {
+    return FILE_ID.test(id) ? this.loadFile(id) : null;
+  }
+
+  protected saveFile(id: string, file: StoredFile) {
+    this.files.set(id, file);
+  }
+
+  protected loadFile(id: string): StoredFile | null {
+    return this.files.get(id) ?? null;
+  }
 
   protected load(): RawTables {
     return this.data;
@@ -151,5 +184,22 @@ export class LocalFileBackend extends MemoryBackend {
     const tmp = `${this.file}.tmp`;
     writeFileSync(tmp, JSON.stringify(data));
     renameSync(tmp, this.file);
+  }
+
+  /** Pictures sit next to the data file: files/<id> plus files/<id>.type holding the MIME type. */
+  private filePath(id: string) {
+    return path.join(path.dirname(this.file), "files", id);
+  }
+
+  protected saveFile(id: string, file: StoredFile) {
+    mkdirSync(path.dirname(this.filePath(id)), { recursive: true });
+    writeFileSync(this.filePath(id), file.data);
+    writeFileSync(`${this.filePath(id)}.type`, file.mimeType);
+  }
+
+  protected loadFile(id: string): StoredFile | null {
+    const p = this.filePath(id);
+    if (!existsSync(p) || !existsSync(`${p}.type`)) return null;
+    return { mimeType: readFileSync(`${p}.type`, "utf8"), data: readFileSync(p) };
   }
 }

@@ -3,8 +3,8 @@
  * holds back questions that need a picture, and validates every paper with the importer's own rules.
  *
  * Usage: npx tsx scripts/pasco/select-papers.ts
- *   reads  private/papers/{comp,eng,soc,sci,2026,old}/*.json  (from npm run pasco:objectives)
- *   writes private/papers/ready/*.json, then: npm run prep:import -- private/papers/ready/*.json
+ *   reads  private/papers/{comp,eng,soc,sci,math,math-word,2026,old}/*.json  (from npm run pasco:objectives)
+ *   writes private/papers/ready/*.json; then upload-pictures.ts, then npm run prep:import
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -21,8 +21,11 @@ const sources: { dir: string; keep: (subject: string, year: number) => boolean }
   { dir: "eng", keep: () => true },
   { dir: "soc", keep: () => true },
   { dir: "sci", keep: () => true },
-  { dir: "math", keep: () => true },
-  { dir: "2026", keep: (s) => s !== "MATH" },
+  // Maths 2022-2025 only from the PDF: for 2020 and 2021 the Word book is better (its equations are pictures,
+  // where the PDF garbles fractions).
+  { dir: "math", keep: (_s, y) => y >= 2022 },
+  { dir: "math-word", keep: () => true },
+  { dir: "2026", keep: () => true },
   { dir: "old", keep: (s, y) => !(["ENG", "SOC", "COMP", "SCI"].includes(s) && y >= 2020) },
 ];
 /** Questions that need a picture the text does not carry (see review notes). */
@@ -48,19 +51,18 @@ for (const { dir, keep } of sources) {
   for (const f of readdirSync(path.join(root, dir)).filter((f) => f.endsWith(".json"))) {
     const p = JSON.parse(readFileSync(path.join(root, dir, f), "utf8"));
     if (!keep(p.subjectCode, p.year)) continue;
-    const hasImage = (q: { text: string; options?: { text: string }[] }) => /\[image:/.test(q.text) || (q.options ?? []).some((o) => /\[image:/.test(o.text));
     type Q = { code: string; numberLabel: string; text: string; options: { label: string; text: string; isCorrect: boolean }[] };
-    // Maths from a PDF: fractions are drawn as numerator, line, denominator, and come out wrong as text
-    // ("11 <u>3</u>"). Only questions that converted cleanly go in; the rest wait to be shown as pictures.
+    // Maths: only questions the converter didn't flag. From the PDF also none with drawn fractions, which come
+    // out wrong as text ("11 <u>3</u>"). Pictures ([image: ...]) are fine: upload-pictures.ts sends them.
     const reviewFile = path.join(root, dir, f.replace(/\.json$/, ".review.txt"));
     const flagged = p.subjectCode === "MATH" && existsSync(reviewFile)
       ? new Set([...readFileSync(reviewFile, "utf8").matchAll(/^Q(\d+):/gm)].map((m) => m[1]))
       : new Set<string>();
     const unclearMaths = (q: Q) =>
       p.subjectCode === "MATH" &&
-      (flagged.has(q.numberLabel) || [q.text, ...q.options.map((o) => o.text)].some((t) => /<u>|[₀-₉⁰-⁹]\s|\s[a-z]$/.test(t)));
+      (flagged.has(q.numberLabel) || (dir === "math" && [q.text, ...q.options.map((o) => o.text)].some((t) => /<u>|[₀-₉⁰-⁹]\s|\s[a-z]$/.test(t))));
     const kept = p.questions.filter((q: Q) => {
-      if (needsPicture.has(q.code) || hasImage(q) || unclearMaths(q)) {
+      if (needsPicture.has(q.code) || unclearMaths(q)) {
         held.push(q.code);
         return false;
       }

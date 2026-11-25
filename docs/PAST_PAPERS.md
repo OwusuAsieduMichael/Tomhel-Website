@@ -42,7 +42,15 @@ If a new book doesn't convert cleanly, `--dump <page>` prints the text exactly a
 
 ### Choosing what to import
 
-`npx tsx scripts/pasco/select-papers.ts` collects the converted papers into `private/papers/ready/`. It prefers the newer edition where two books overlap, applies the hand-checked corrections listed in the script, leaves out questions without exactly one correct answer, holds back questions that need a picture, and validates every paper with the importer's rules. Then import `private/papers/ready/*.json`.
+`npx tsx scripts/pasco/select-papers.ts` collects the converted papers into `private/papers/ready/`. It prefers the newer edition where two books overlap, applies the hand-checked corrections listed in the script, leaves out questions without exactly one correct answer, holds back Maths questions the converter flagged (and, from PDFs, any with drawn fractions), and validates every paper with the importer's rules.
+
+### Pictures (equations and diagrams)
+
+Word books keep their equations and diagrams as pictures, which the converter writes as `[image: file|width|height]`. Word saves each equation twice at two sizes; the converter keeps the sharper file at the printed size.
+
+`npx tsx scripts/pasco/upload-pictures.ts` uploads each distinct picture once to the portal's private Drive folder (through the Apps Script's `putFile`) and rewrites the references as `{{img:ID|width|height}}`. The ids are remembered in `private/papers/pictures.json`, so running it again only sends new pictures. In the portal, `/prep/media/ID` serves a picture to signed-in users only; small pictures sit inside the sentence, larger ones (diagrams) get their own line.
+
+Then import: `npx tsx scripts/import-papers.ts private/papers/ready/<files>` (in batches of about 25 on Windows, whose command line is limited in length).
 
 ## 2. Theory papers (written by hand from the marking scheme)
 
