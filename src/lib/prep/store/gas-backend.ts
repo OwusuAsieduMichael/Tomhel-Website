@@ -1,3 +1,4 @@
+import { gunzipSync, gzipSync } from "node:zlib";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { FILE_ID, PICTURE_TYPES, toStoreError, type Backend, type RawOp, type RawTables, type StoredFile } from "./backend";
 
@@ -14,6 +15,24 @@ const CACHE_SECONDS = 60;
 /** How long to wait for other tabs to join a fetch. Cache lookups for one read finish within this. */
 const BATCH_WINDOW_MS = 5;
 const tag = (sheet: string) => `prep-sheet:${sheet}`;
+/**
+ * Next.js refuses to cache an item over 2 MB, and when it refuses it keeps serving the older copy it already
+ * has. The Questions and McqOptions tabs grew past that with the past papers, so students got questions without
+ * their options. Tabs are cached gzipped (Questions: 3.6 MB -> 0.8 MB). McqOptions is mostly random ids and stays
+ * near 2 MB even compressed, so a tab still too big is kept in server memory instead (see `memory`).
+ * The key changed with the format, so the old frozen copies are never read again.
+ */
+const CACHE_KEY = "prep-sheet-gz";
+const MAX_CACHED_CHARS = 1_800_000;
+
+export function packGrid(grid: string[][]): string | null {
+  const packed = gzipSync(JSON.stringify(grid)).toString("base64");
+  return packed.length > MAX_CACHED_CHARS ? null : packed;
+}
+
+export function unpackGrid(packed: string): string[][] {
+  return JSON.parse(gunzipSync(Buffer.from(packed, "base64")).toString("utf8"));
+}
 
 type GasResponse = {
   success: boolean;
@@ -31,6 +50,8 @@ export type CacheFn = <T>(fn: () => Promise<T>, key: string[], opts: { tags: str
 
 export class GasBackend implements Backend {
   private batch: { sheets: Set<string>; result: Promise<RawTables> } | null = null;
+  /** Tabs too big for the data cache, kept per server instance. Other instances' writes show within CACHE_SECONDS. */
+  private memory = new Map<string, { grid: string[][]; at: number }>();
   private cacheFn: CacheFn;
 
   constructor(private opts: { url: string; secret: string; cache: boolean; cacheFn?: CacheFn }) {
@@ -85,7 +106,21 @@ export class GasBackend implements Backend {
     if (!this.opts.cache) return this.fetchTables(sheets);
     const unique = [...new Set(sheets)];
     const grids = await Promise.all(
-      unique.map((s) => this.cacheFn(() => this.fetchSheet(s), ["prep-sheet", s], { tags: [tag(s)], revalidate: CACHE_SECONDS })()),
+      unique.map(async (s) => {
+        let fetched: string[][] | undefined;
+        const packed = await this.cacheFn(async () => packGrid((fetched = await this.fetchSheet(s))), [CACHE_KEY, s], {
+          tags: [tag(s)],
+          revalidate: CACHE_SECONDS,
+        })();
+        if (packed !== null) return unpackGrid(packed);
+        // Too big for the data cache even compressed: keep it in this server's memory for the same time instead.
+        if (fetched) this.memory.set(s, { grid: fetched, at: Date.now() });
+        const kept = this.memory.get(s);
+        if (kept && Date.now() - kept.at < CACHE_SECONDS * 1000) return kept.grid;
+        const grid = await this.fetchSheet(s);
+        this.memory.set(s, { grid, at: Date.now() });
+        return grid;
+      }),
     );
     return Object.fromEntries(unique.map((s, i) => [s, grids[i]]));
   }
@@ -96,7 +131,12 @@ export class GasBackend implements Backend {
       await this.call({ action: "write", ops });
     } finally {
       // Clear even on failure: part of a failed batch may not be what the cache holds.
-      if (this.opts.cache) for (const t of new Set(ops.map((o) => o.table))) revalidateTag(tag(t));
+      if (this.opts.cache) {
+        for (const t of new Set(ops.map((o) => o.table))) {
+          this.memory.delete(t);
+          revalidateTag(tag(t));
+        }
+      }
     }
   }
 
