@@ -224,6 +224,30 @@ function touchedTablesPure_(ops) {
  */
 function applyOpsPure_(data, ops) {
   var changed = {};
+  // Lookups built once per table and column, and kept up to date as rows are added. Without them each update
+  // scanned the whole tab, so approving a subject (1,000+ questions of 8,000+) took millions of comparisons.
+  var rowById = {}; // table -> { id: row index }
+  var taken = {}; // table + "|" + column -> { UPPERCASED value: true }
+  function idIndex(name, table, idCol) {
+    if (!rowById[name]) {
+      rowById[name] = {};
+      for (var k = 1; k < table.length; k++) rowById[name][table[k][idCol]] = k;
+    }
+    return rowById[name];
+  }
+  function valuesIn(name, table, col) {
+    var key = name + "|" + col;
+    if (!taken[key]) {
+      taken[key] = {};
+      for (var k = 1; k < table.length; k++) taken[key][String(table[k][col]).toUpperCase()] = true;
+    }
+    return taken[key];
+  }
+  function forget(name) {
+    delete rowById[name];
+    for (var key in taken) if (key.indexOf(name + "|") === 0) delete taken[key];
+  }
+
   for (var i = 0; i < ops.length; i++) {
     var op = ops[i];
     var table = data[op.table];
@@ -242,12 +266,9 @@ function applyOpsPure_(data, ops) {
         if (!rec.id) throw new Error("Every new row needs an id.");
         var checks = ["id"].concat(unique);
         for (var c = 0; c < checks.length; c++) {
-          var col = header.indexOf(checks[c]);
           var value = String(rec[checks[c]] == null ? "" : rec[checks[c]]);
-          for (var k = 1; k < table.length; k++) {
-            if (String(table[k][col]).toUpperCase() === value.toUpperCase()) {
-              throw new Error("DUPLICATE:" + op.table + "." + checks[c] + ":" + value);
-            }
+          if (valuesIn(op.table, table, header.indexOf(checks[c]))[value.toUpperCase()]) {
+            throw new Error("DUPLICATE:" + op.table + "." + checks[c] + ":" + value);
           }
         }
         var row = [];
@@ -256,22 +277,25 @@ function applyOpsPure_(data, ops) {
           if (header.indexOf(key) === -1) throw new Error("Table " + op.table + " has no column " + key + ". Run the setup step.");
         }
         table.push(row);
-      }
-    } else if (op.op === "update") {
-      var found = false;
-      for (var k2 = 1; k2 < table.length; k2++) {
-        if (table[k2][idCol] === op.id) {
-          for (var key2 in op.set) {
-            var col2 = header.indexOf(key2);
-            if (col2 === -1) throw new Error("Table " + op.table + " has no column " + key2 + ". Run the setup step.");
-            if (key2 === "id") throw new Error("Row ids can't be changed.");
-            table[k2][col2] = op.set[key2] == null ? "" : String(op.set[key2]);
-          }
-          found = true;
-          break;
+        // Keep the lookups in step with the new row (only the ones already built).
+        if (rowById[op.table]) rowById[op.table][row[idCol]] = table.length - 1;
+        for (var h2 = 0; h2 < header.length; h2++) {
+          var built = taken[op.table + "|" + h2];
+          if (built) built[String(row[h2]).toUpperCase()] = true;
         }
       }
-      if (!found) throw new Error("NOT_FOUND:" + op.table + ":" + op.id);
+    } else if (op.op === "update") {
+      var k2 = idIndex(op.table, table, idCol)[op.id];
+      if (k2 === undefined) throw new Error("NOT_FOUND:" + op.table + ":" + op.id);
+      for (var key2 in op.set) {
+        var col2 = header.indexOf(key2);
+        if (col2 === -1) throw new Error("Table " + op.table + " has no column " + key2 + ". Run the setup step.");
+        if (key2 === "id") throw new Error("Row ids can't be changed.");
+        var old = String(table[k2][col2]).toUpperCase();
+        table[k2][col2] = op.set[key2] == null ? "" : String(op.set[key2]);
+        // A changed value frees the old one and takes the new one for later unique checks.
+        if (old !== String(table[k2][col2]).toUpperCase()) delete taken[op.table + "|" + col2];
+      }
     } else if (op.op === "delete") {
       var ids = {};
       for (var d = 0; d < op.ids.length; d++) ids[op.ids[d]] = true;
@@ -280,6 +304,7 @@ function applyOpsPure_(data, ops) {
           return !ids[row[idCol]];
         }),
       );
+      forget(op.table);
     } else {
       throw new Error("Unknown op " + op.op + ".");
     }
