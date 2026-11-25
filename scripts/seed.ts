@@ -1,5 +1,5 @@
 /**
- * Load demo data (2 classes, 10 subjects, 3 teachers, 1 admin, 10 students, 2 sample papers).
+ * Load demo data (2 classes, 9 subjects, 3 teachers, 1 admin, 10 students, 2 sample papers).
  * Usage: npm run prep:seed
  *
  * Goes to the Google Sheet when PREP_GAS_URL is set in .env.local, otherwise to the local demo file.

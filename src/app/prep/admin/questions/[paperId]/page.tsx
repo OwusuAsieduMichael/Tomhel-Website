@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/prep/auth/current-user";
 import { getStore } from "@/lib/prep/store";
 import { cn } from "@/lib/utils";
 import { approveAllAction, setQuestionStatusAction } from "../../actions";
+import { QuestionText } from "@/components/prep/question-text";
 
 export const metadata: Metadata = { title: "Paper" };
 
@@ -80,14 +81,14 @@ export default async function PaperPage({ params }: { params: Promise<{ paperId:
                   {q.topic ? ` · ${q.topic.strand}${q.topic.subStrand ? ` / ${q.topic.subStrand}` : ""}` : ""}
                 </span>
               </div>
-              <p className="whitespace-pre-line">{q.text}</p>
+              <p className="whitespace-pre-line"><QuestionText text={q.text} /></p>
               {q.imageUrls.length ? <p className="text-sm text-prep-muted">{q.imageUrls.length} image(s) attached</p> : null}
 
               {q.options.length ? (
                 <ul className="space-y-1 text-sm">
                   {q.options.map((o) => (
                     <li key={o.label} className={cn(o.isCorrect && "font-semibold text-prep-awarded")}>
-                      {o.label}. {o.text}
+                      {o.label}. <QuestionText text={o.text} />
                       {o.isCorrect ? " ✓ correct" : ""}
                     </li>
                   ))}

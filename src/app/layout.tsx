@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteConfig, schoolImages } from "@/lib/constants";
 import { organizationJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -64,7 +66,12 @@ export default function RootLayout({
         />
       </head>
       {/* Site chrome lives in (site)/layout.tsx; /prep has its own layout. */}
-      <body className="min-h-screen font-sans">{children}</body>
+      <body className="min-h-screen font-sans">
+        {children}
+        {/* Vercel page-view analytics and Core Web Vitals; both only report from Vercel deployments. */}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }

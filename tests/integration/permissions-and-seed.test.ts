@@ -23,7 +23,7 @@ describe("seed", () => {
     expect(users.filter((u) => u.role === "teacher")).toHaveLength(3);
     expect(users.filter((u) => u.role === "admin")).toHaveLength(1);
     expect(classes).toHaveLength(2);
-    expect(subjects).toHaveLength(10);
+    expect(subjects).toHaveLength(9);
   });
 
   it("marks French and Twi as not auto-marked", async () => {

@@ -14,7 +14,6 @@ export const seedSubjects = [
   { code: "COMP", name: "Computing", autoMarkTheory: true },
   { code: "CTECH", name: "Career Technology", autoMarkTheory: true },
   { code: "FRE", name: "French", autoMarkTheory: false },
-  { code: "CAD", name: "Creative Arts and Design", autoMarkTheory: true },
   { code: "TWI", name: "Twi", autoMarkTheory: false },
 ] as const;
 

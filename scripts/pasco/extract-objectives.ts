@@ -1,25 +1,31 @@
 /**
- * Convert the objective (Paper 1) sections of a PASCO "BECE Past Questions & Answers" PDF into
+ * Convert the objective (Paper 1) sections of a PASCO / WordPub "BECE Past Questions & Answers" book into
  * draft paper files in the BECE Prep import format, plus a review list of anything that needs a human eye.
  *
  * Usage:
- *   npm run pasco:objectives -- <pdf> --subject SCI [--password 1234] [--out private/papers]
+ *   npm run pasco:objectives -- <book.pdf | book.htm> --subject SCI [--password 1234] [--out private/papers]
  *
+ * A .pdf is read directly (password-protected copies too). A Word .doc book is first saved from Word as
+ * HTML (see docs/PAST_PAPERS.md) and the .htm is passed here.
  * Output goes to a git-ignored folder: licensed content must never be committed (the repo is public).
- * Then: check the review list, fix the JSON if needed, and import it on Admin > Questions.
- * Papers arrive as drafts, so students see nothing until an admin approves them.
+ * Then: check the review list, run scripts/pasco/select-papers.ts, and import. Papers arrive as drafts,
+ * so students see nothing until an admin approves them.
  *
  * How it works:
- *   1. PDF.js reads every text fragment with its position and size. Fragments are split into the left and
- *      right column by the page's centre line, then rebuilt into lines top to bottom.
- *   2. Small raised/lowered fragments become real superscripts and subscripts (m s⁻², H₂O).
- *   3. Sections are found by their headings: "<year>: <SUBJECT> 1 / OBJECTIVE TEST" and the matching "ANSWERS" page.
- *   4. Questions ("12. ...") and options ("A. ...") are parsed; the answer key ("12. B. ...") marks the correct option.
+ *   1. The book becomes lines of text (pdf-pages.ts for PDFs, word-html.ts for Word HTML), keeping
+ *      superscripts and subscripts (m s⁻², H₂O), underlined words (<u>...</u>) and table cells (tabs).
+ *   2. Sections are found by their headings ("2021: INTEGRATED SCIENCE 1", or "June 2025" then "COMPUTING 1")
+ *      and the matching "ANSWERS" / "SOLUTIONS" pages.
+ *   3. Section instructions ("SECTION B: choose the word nearest in meaning to the underlined word") and
+ *      cloze passages are attached to every question they apply to.
+ *   4. Questions ("12. ..."), options ("A. ..." to "E. ...", or a row of a table) and the answer key
+ *      ("12. B. ...") are parsed. When the key's letter and text disagree, the text wins and it is flagged.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { isHeadingLine, readPdfPages, splitSections } from "./pdf-pages";
+import { readHtmlPages } from "./word-html";
 
 type Option = { label: string; text: string; isCorrect: boolean };
 type Question = { code: string; numberLabel: string; type: "mcq"; text: string; marks: number; options: Option[]; modelAnswer?: string };
@@ -29,6 +35,8 @@ const { values, positionals } = parseArgs({
   options: {
     subject: { type: "string" },
     password: { type: "string" },
+    /** Force the page layout instead of detecting it: 1 or 2 columns. */
+    columns: { type: "string" },
     out: { type: "string", default: "private/papers" },
     /** Print the reconstructed lines of one page (for checking a new book layout). */
     dump: { type: "string" },
@@ -43,81 +51,81 @@ if (!pdfPath || !values.subject) {
 const subject = values.subject.toUpperCase();
 
 // ---------------------------------------------------------------------------
-// 1. Lines of text per page, left column then right column
-// ---------------------------------------------------------------------------
-
-type Frag = { x: number; y: number; w: number; size: number; str: string };
-
-const SUPER: Record<string, string> = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "-": "⁻", "–": "⁻", "−": "⁻", "+": "⁺", n: "ⁿ" };
-const SUB: Record<string, string> = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
-const mapChars = (s: string, table: Record<string, string>) => ([...s].every((c) => table[c]) ? [...s].map((c) => table[c]).join("") : null);
-
-const isNoise = (s: string) => /Dial \*\d+\*\d+#|passco\.com\.gh/i.test(s);
-
-/** Groups fragments into lines (same baseline, small script fragments attach to their line). */
-function toLines(frags: Frag[]): string[] {
-  const sorted = [...frags].sort((a, b) => b.y - a.y || a.x - b.x);
-  const lines: Frag[][] = [];
-  for (const f of sorted) {
-    const line = lines.find((l) => Math.abs(l[0].y - f.y) <= (f.size < l[0].size || l[0].size < f.size ? 6 : 2));
-    if (line) line.push(f);
-    else lines.push([f]);
-  }
-  return lines
-    .sort((a, b) => b[0].y - a[0].y)
-    .map((line) => {
-      const body = Math.max(...line.map((f) => f.size));
-      const base = line.find((f) => f.size === body)!.y;
-      let out = "";
-      let end = -Infinity;
-      for (const f of line.sort((a, b) => a.x - b.x)) {
-        let s = f.str;
-        if (f.size < body * 0.85) {
-          const script = f.y > base + 1 ? mapChars(s, SUPER) : f.y < base - 0.5 ? mapChars(s, SUB) : null;
-          if (script) s = script;
-        }
-        if (out && f.x - end > 1.5 && !out.endsWith(" ") && !s.startsWith(" ")) out += " ";
-        out += s;
-        end = f.x + f.w;
-      }
-      return out.replace(/\s+/g, " ").trim();
-    })
-    .filter((l) => l && !isNoise(l));
-}
-
-async function readPages(): Promise<string[][]> {
-  const doc = await getDocument({ data: new Uint8Array(readFileSync(pdfPath)), password: values.password, verbosity: 0 }).promise;
-  const pages: string[][] = [];
-  for (let n = 1; n <= doc.numPages; n++) {
-    const page = await doc.getPage(n);
-    const mid = page.getViewport({ scale: 1 }).width / 2;
-    const frags: Frag[] = [];
-    for (const it of (await page.getTextContent()).items) {
-      if (!("str" in it) || !it.str) continue;
-      frags.push({ x: it.transform[4], y: it.transform[5], w: it.width, size: Math.abs(it.transform[0]) || it.height, str: it.str });
-    }
-    pages.push([...toLines(frags.filter((f) => f.x < mid)), ...toLines(frags.filter((f) => f.x >= mid))]);
-  }
-  return pages;
-}
-
-// ---------------------------------------------------------------------------
 // 2. Parse
 // ---------------------------------------------------------------------------
 
-/** "2021: INTEGRATED SCIENCE 1". Some answer pages leave out the paper number. */
-const HEADING = /^(\d{4}): [A-Z ]+?(?: ([12]))?$/;
-const PAGE_NUMBER = /^\d{1,3}$/;
-const SKIP = /^(OBJECTIVE TEST|ANSWERS|Answer all the questions|Do all rough work|END OF PAPER|\d+ minutes)/i;
+const SKIP = /^(OBJECTIVE TEST|Paper 1 - OBJECTIVE TEST|ANSWERS|Answer all the questions|Think carefully|Erase completely|Do all rough work|Now answer the following|END OF|\d+ minutes)/i;
+const keep = (l: string) => !SKIP.test(l) && !isHeadingLine(l);
 
-function parseQuestions(lines: string[]) {
-  const body = lines.filter((l) => !SKIP.test(l) && !HEADING.test(l) && !PAGE_NUMBER.test(l)).join("\n");
+/** Lines that open a section instruction ("SECTION B", "Choose from the alternatives ..."), not a question. */
+const INSTRUCTION = /^(PART [A-F]\b|SECTION [A-H]\b|\[?UNIT [IVX\d]+\]?$|LEXIS AND STRUCTURE|ORAL LANGUAGE|From the (options|alternatives|list)|Choose from|In each of the following|In the following passage|Use the (information|diagram|table|figure|map|passage)|Study the (information|diagram|table|figure|map)|The passage below|Read the (following|passage)|Below (are|is)|For each (question|of the following))/i;
+/** Lines that only name a part or section; dropped from the instruction text. */
+const SECTION_NAME = /^(PART [A-F]|SECTION [A-H]|\[?UNIT [IVX\d]+\]?|LEXIS AND STRUCTURE|ORAL LANGUAGE)$/i;
+/** "12. text", or "12." alone on its line above a picture (older Maths papers). */
+const QUESTION_LINE = /^\d{1,2}\.(\s|$)/;
+/** An options table row: "31. seek	request	search	look" (cells are tab-separated; a cell can be missing). */
+const CLOZE_ROW = /^(\d{1,2})\.\s*([^\t]+(?:\t[^\t]+){2,4})$/;
+
+/**
+ * Separates section instructions from questions. An instruction that names questions ("... in Question 14
+ * below") applies to those only; any other applies to every question until the next instruction.
+ */
+function liftInstructions(lines: string[]) {
+  const out: string[] = [];
+  const forQuestion = new Map<number, string>();
+  /** Options from a table row whose question was already printed above it (French: sentences first, then a table). */
+  const tableOptions = new Map<number, string[]>();
+  const seen = new Set<number>();
+  let block: string[] | null = null;
+  const close = () => {
+    if (!block) return;
+    const text = block.filter((l) => !SECTION_NAME.test(l)).join(" ").replace(/\s+/g, " ").trim();
+    const range = /questions? (\d+)(?:\s*(?:and|to|-|–)\s*(\d+))?/i.exec(text);
+    if (text && range && !/^(In the following passage|The passage below|Read the)/i.test(text)) {
+      for (let n = Number(range[1]); n <= Number(range[2] ?? range[1]); n++) forQuestion.set(n, text);
+    } else out.push(`@@SECTION ${text}`);
+    block = null;
+  };
+  for (const raw of lines) {
+    if (/^A\s+B\s+C\s+D(\s+E)?$/.test(raw)) continue;
+    const cloze = CLOZE_ROW.exec(raw);
+    // A row that starts with an option label ("1. A<tab>text") is an answer, not a table of options.
+    const table = cloze && !/^[A-E]\.?$/.test(cloze[2].split("\t")[0].trim()) ? cloze : null;
+    if (table || QUESTION_LINE.test(raw)) close();
+    if (table) {
+      const n = Number(table[1]);
+      const options = table[2].split("\t").map((cell, i) => `${"ABCDE"[i]}. ${cell.trim()}`);
+      if (seen.has(n)) tableOptions.set(n, options);
+      else out.push(`${n}. Choose the most suitable word for gap –${n}–.`, ...options);
+      seen.add(n);
+      continue;
+    }
+    const q = /^(\d{1,2})\.(?:\s|$)/.exec(raw);
+    if (q) seen.add(Number(q[1]));
+    if (!block && INSTRUCTION.test(raw) && !q) block = [];
+    if (block) block.push(raw.replace(/\t/g, " "));
+    else out.push(raw);
+  }
+  close();
+  return { lines: out, forQuestion, tableOptions };
+}
+
+function parseQuestions(allLines: string[]) {
+  const { lines, forQuestion, tableOptions } = liftInstructions(allLines.filter(keep));
+  const body = lines.join("\n");
   const starts: { n: number; at: number; textAt: number }[] = [];
   for (const m of body.matchAll(/(?:^|\n)(\d{1,2})\.\s/g)) starts.push({ n: Number(m[1]), at: m.index, textAt: m.index + m[0].length });
   // Keep only the sequence 1, 2, 3, ... (ignores numbers inside text).
   const seq: typeof starts = [];
   for (const s of starts) if (s.n === (seq.at(-1)?.n ?? 0) + 1) seq.push(s);
-  const items = seq.map((s, i) => ({ n: s.n, raw: body.slice(s.textAt, seq[i + 1]?.at ?? body.length), preamble: "" }));
+  // Section instructions sit between questions; each question carries the last one before it.
+  const sectionAt = [...body.matchAll(/(?:^|\n)@@SECTION ([^\n]*)/g)].map((m) => ({ at: m.index, text: m[1] }));
+  const items = seq.map((s, i) => ({
+    n: s.n,
+    raw: [body.slice(s.textAt, seq[i + 1]?.at ?? body.length).replace(/\n@@SECTION [^\n]*/g, ""), ...(tableOptions.get(s.n) ?? [])].join("\n"),
+    preamble: "",
+    instruction: forQuestion.get(s.n) ?? sectionAt.filter((x) => x.at < s.at).at(-1)?.text ?? "",
+  }));
   // A shared stem ("... Use the information to answer questions 27 and 28.") sits after the previous item's options.
   for (const [i, it] of items.entries()) {
     const shared = /\n(?![A-D]\.\s)((?:(?!\n[A-D]\.\s)[\s\S])*?questions? \d+(?:\s*(?:and|to|-|–)\s*\d+)?\.?)\s*$/i.exec(it.raw);
@@ -131,33 +139,61 @@ function parseQuestions(lines: string[]) {
       for (const target of items) if (target.n >= first && target.n <= last) target.preamble = preamble;
     }
   }
+  // The information for "Use the information to answer questions 4 and 5" is often printed just before that
+  // line, after the previous question's last option ("D. Length" then "In the diagram, P and Q are two sets").
+  // Lines after the last option that start a new sentence move to the questions the instruction names.
+  for (const [i, it] of items.entries()) {
+    const next = items[i + 1];
+    const instruction = next && forQuestion.get(next.n);
+    if (!instruction || forQuestion.get(it.n) === instruction) continue;
+    const lines = it.raw.split("\n");
+    const lastOption = lines.findLastIndex((l) => /^[A-E](?:\.\s|\)\s|\t)/.test(l));
+    const tail = lastOption >= 0 ? lines.slice(lastOption + 1).filter((l) => l.trim()) : [];
+    if (!tail.length || !/^[A-Z(]/.test(tail[0])) continue;
+    it.raw = lines.slice(0, lastOption + 1).join("\n");
+    const info = tail.join(" ").replace(/\s+/g, " ").trim();
+    for (const target of items) if (forQuestion.get(target.n) === instruction) target.preamble = [info, target.preamble].filter(Boolean).join(" ");
+  }
   return items;
 }
 
+/** An option label: "A. ", "A) " or "A" followed by a tab. */
+const optionLabel = (label: string) => new RegExp(`(^|\\s)${label}(?:\\.\\s|\\)\\s|\\t)`, "g");
+
+/** Splits "stem A. ... B. ... C. ... D. ..." (older papers add "E. ..."). */
 function splitOptions(raw: string) {
-  const flat = raw.replace(/\s+/g, " ");
+  const txt = raw.replace(/[^\S\t]+/g, " ");
   // Search backwards from D: options come last, and a stem can contain "2.5 A." (amperes) or "Vitamin C.".
-  const at: number[] = [];
-  let before = flat.length;
+  const at: { start: number; text: number }[] = [];
+  let before = txt.length;
   for (const label of ["D", "C", "B", "A"]) {
-    let found = -1;
-    for (const m of flat.slice(0, before).matchAll(new RegExp(`(^|\\s)${label}\\.\\s`, "g"))) found = m.index + m[1].length;
-    if (found === -1) return null;
+    let found: (typeof at)[number] | null = null;
+    for (const m of txt.slice(0, before).matchAll(optionLabel(label))) found = { start: m.index + m[1].length, text: m.index + m[0].length };
+    if (!found) return null;
     at.unshift(found);
-    before = found;
+    before = found.start;
   }
+  const e = [...txt.slice(at[3].text).matchAll(optionLabel("E"))].at(-1);
+  if (e) at.push({ start: at[3].text + e.index + e[1].length, text: at[3].text + e.index + e[0].length });
+  const clean = (s: string) => s.replace(/\s+/g, " ").trim();
   return {
-    stem: flat.slice(0, at[0]).trim(),
-    options: ["A", "B", "C", "D"].map((label, i) => ({ label, text: flat.slice(at[i] + 2, at[i + 1] ?? flat.length).trim() })),
+    stem: clean(txt.slice(0, at[0].start)),
+    options: at.map((a, i) => ({ label: "ABCDE"[i], text: clean(txt.slice(a.text, at[i + 1]?.start ?? txt.length)) })),
   };
 }
 
 function parseKey(lines: string[]) {
-  const text = lines.filter((l) => !SKIP.test(l) && !HEADING.test(l) && !PAGE_NUMBER.test(l)).join(" ");
-  const key = new Map<number, { label: string; text: string; note?: string }>();
-  for (const m of text.matchAll(/(?:^|\s)(\d{1,2})\.\s+([A-D])\.+\s(.*?)(?=\s\d{1,2}\.\s+[A-D][.\s]|$)/g)) {
+  const text = lines.filter(keep).join(" ");
+  const key = new Map<number, { label?: string; text: string; note?: string }>();
+  // "12. B. text", "12. **B. text", "12. B – text", "12. B<tab>text", and sometimes just "12. text" with no letter.
+  // The space after the letter is not consumed, so an entry with only a letter ("11. B. 12. D. 285°")
+  // still ends at "12." instead of swallowing it.
+  for (const m of text.matchAll(/(?:^|\s)(\d{1,2})\.\s+(?:\**([A-E])(?:\s*(?:\.+|\)|[–-])(?=\s|$)|(?=\t)))?(.*?)(?=\s\d{1,2}\.\s|$)/g)) {
+    const n = Number(m[1]);
+    // Numbering starting again means the key has ended (a theory paper with no heading of its own follows).
+    if (key.size && n <= Math.max(...key.keys())) break;
     const note = /\((Note:[^)]*)\)/i.exec(m[3])?.[1];
-    key.set(Number(m[1]), { label: m[2], text: m[3].replace(/\(Note:[^)]*\)/i, "").trim(), note });
+    key.set(n, { label: m[2], text: m[3].replace(/\(Note:[^)]*\)/i, "").trim(), note });
   }
   return key;
 }
@@ -169,35 +205,18 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9⁰-⁹₀-₉]+/g,
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const pages = await readPages();
+  const columns = values.columns === "1" ? 1 : values.columns === "2" ? 2 : undefined;
+  const { pages } = /\.html?$/i.test(pdfPath) ? readHtmlPages(pdfPath) : await readPdfPages(pdfPath, { password: values.password, columns });
   if (values.dump) {
     console.log(pages[Number(values.dump) - 1].join("\n"));
     return;
   }
-  type Section = { questions: string[]; answers: string[]; duration?: number };
-  const sections = new Map<number, Section>();
-  let current: { year: number; kind: "questions" | "answers" } | null = null;
-
-  for (const lines of pages) {
-    const top = lines.slice(0, 4).join(" ");
-    const head = lines.slice(0, 3).map((l) => HEADING.exec(l)).find(Boolean);
-    if (head) {
-      const objective = head[2] === "1" || (!head[2] && /OBJECTIVE/.test(top));
-      current = objective ? { year: Number(head[1]), kind: /ANSWERS/.test(top) ? "answers" : "questions" } : null;
-      if (current) {
-        const s = sections.get(current.year) ?? { questions: [], answers: [] };
-        const d = /(\d+) minutes/.exec(top);
-        if (d) s.duration = Number(d[1]);
-        sections.set(current.year, s);
-      }
-    }
-    if (current) sections.get(current.year)![current.kind].push(...lines);
-  }
+  const objectives = splitSections(pages).filter((s) => s.paperNo === 1);
 
   mkdirSync(values.out!, { recursive: true });
   const summary: string[] = [];
 
-  for (const [year, s] of [...sections.entries()].sort((a, b) => b[0] - a[0])) {
+  for (const { year, ...s } of objectives.sort((a, b) => b.year - a.year)) {
     const review: string[] = [];
     const key = parseKey(s.answers);
     const questions: Question[] = [];
@@ -209,18 +228,40 @@ async function main() {
         flag(`could not find options A to D. Raw text: "${it.raw.replace(/\s+/g, " ").trim()}"`);
         continue;
       }
-      const text = [it.preamble, parts.stem].filter(Boolean).join(" ");
+      const stem = [it.preamble, parts.stem].filter(Boolean).join(" ");
+      const text = [it.instruction, stem].filter(Boolean).join("\n\n");
       const answer = key.get(it.n);
+      // The letter the paper marks correct. When the key's letter and text disagree and the text is exactly
+      // another option, the text wins: printing slips in the key are usually in the letter.
+      let correct: string | undefined;
       if (!answer) flag("no answer in the answer key");
       else {
-        const chosen = parts.options.find((o) => o.label === answer.label)!;
-        if (answer.text && norm(chosen.text) !== norm(answer.text)) {
-          flag(`answer key says ${answer.label}. "${answer.text}" but option ${answer.label} reads "${chosen.text}"`);
+        const byText = answer.text ? parts.options.find((o) => norm(o.text) === norm(answer.text)) : undefined;
+        if (!answer.label) {
+          correct = byText?.label;
+          flag(byText ? `answer key gives no letter, only "${answer.text}": marked option ${byText.label}.` : `answer key gives no letter, and "${answer.text}" matches no option.`);
+        } else {
+          correct = answer.label;
+          const chosen = parts.options.find((o) => o.label === answer.label);
+          // A picture (an equation) can't be compared as text: the key's own copy is a different file.
+          const pictures = /\[image:/.test((chosen?.text ?? "") + answer.text);
+          if (!chosen) {
+            correct = byText?.label;
+            flag(`answer key says ${answer.label}, but the question has no option ${answer.label}` + (byText ? `; its text is option ${byText.label}: marked ${byText.label}.` : "."));
+          } else if (answer.text && !pictures && norm(chosen.text) !== norm(answer.text)) {
+            if (byText) {
+              correct = byText.label;
+              flag(`answer key says ${answer.label}. "${answer.text}", but that text is option ${byText.label} (option ${answer.label} reads "${chosen.text}"): marked ${byText.label}. Check.`);
+            } else flag(`answer key says ${answer.label}. "${answer.text}" but option ${answer.label} reads "${chosen.text}"`);
+          }
         }
         if (answer.note) flag(`the answer key adds "${answer.note}". Check which option is right.`);
       }
-      if (/diagram|figure|illustrat|shown below|graph|table below/i.test(text)) flag("mentions a diagram, which is not imported: add an image link or leave it out.");
+      if (/diagram|figure|illustrat|shown below|graph|table below/i.test(text) && !/\[image:/.test(text)) {
+        flag("mentions a diagram, but the book gives no picture for it: add one or leave the question out.");
+      }
       if (/�/.test(it.raw)) flag("contains an unreadable character");
+      if (/underlined/i.test(text) && !/<u>/.test(stem)) flag("refers to an underlined word, but no underline was found: mark it as <u>word</u>.");
 
       questions.push({
         code: `${subject}-${year}-P1-${it.n}`,
@@ -228,7 +269,7 @@ async function main() {
         type: "mcq",
         text,
         marks: 1,
-        options: parts.options.map((o) => ({ ...o, isCorrect: o.label === answer?.label })),
+        options: parts.options.map((o) => ({ ...o, isCorrect: o.label === correct })),
         ...(answer?.note ? { modelAnswer: answer.note.replace(/^Note:\s*/i, "") } : {}),
       });
     }
@@ -241,7 +282,9 @@ async function main() {
       year,
       paperNo: 1,
       durationMinutes: s.duration ?? null,
-      instructions: "Answer all the questions. Each question is followed by four options lettered A to D. Choose the correct option.",
+      instructions: questions.some((q) => q.options.length === 5)
+        ? "Answer all the questions. Each question is followed by five options lettered A to E. Choose the correct option."
+        : "Answer all the questions. Each question is followed by four options lettered A to D. Choose the correct option.",
       questions,
     };
     const base = path.join(values.out!, `${subject}-${year}-P1`);
@@ -254,6 +297,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
+  console.error(e instanceof Error ? (process.env.DEBUG ? e.stack : e.message) : e);
   process.exit(1);
 });

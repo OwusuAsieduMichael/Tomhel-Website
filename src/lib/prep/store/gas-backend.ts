@@ -1,5 +1,5 @@
 import { revalidateTag, unstable_cache } from "next/cache";
-import { toStoreError, type Backend, type RawOp, type RawTables } from "./backend";
+import { FILE_ID, PICTURE_TYPES, toStoreError, type Backend, type RawOp, type RawTables, type StoredFile } from "./backend";
 
 /**
  * The Google Sheet, through the Apps Script web app. Server-side only: the URL and secret never reach browsers.
@@ -15,7 +15,16 @@ const CACHE_SECONDS = 60;
 const BATCH_WINDOW_MS = 5;
 const tag = (sheet: string) => `prep-sheet:${sheet}`;
 
-type GasResponse = { success: boolean; message?: string; tables?: RawTables; created?: string[]; addedColumns?: Record<string, string[]> };
+type GasResponse = {
+  success: boolean;
+  message?: string;
+  tables?: RawTables;
+  created?: string[];
+  addedColumns?: Record<string, string[]>;
+  id?: string;
+  mimeType?: string;
+  data?: string;
+};
 
 /** The caching wrapper: Next.js's data cache in the app; tests pass a plain one. */
 export type CacheFn = <T>(fn: () => Promise<T>, key: string[], opts: { tags: string[]; revalidate: number }) => () => Promise<T>;
@@ -94,5 +103,25 @@ export class GasBackend implements Backend {
   async setup(schema: Record<string, string[]>) {
     const r = await this.call({ action: "setup", schema });
     return { created: r.created ?? [], addedColumns: r.addedColumns ?? {} };
+  }
+
+  /** Pictures live in a private Drive folder that only this script reads; see Code.gs. */
+  async putFile(file: StoredFile & { name: string }) {
+    if (!PICTURE_TYPES.includes(file.mimeType)) throw new Error("Only PNG, JPEG, GIF or WebP pictures.");
+    const r = await this.call({ action: "putFile", name: file.name, mimeType: file.mimeType, data: file.data.toString("base64") });
+    if (!r.id) throw new Error("The BECE Prep data service did not return a picture id.");
+    return r.id;
+  }
+
+  async getFile(id: string): Promise<StoredFile | null> {
+    if (!FILE_ID.test(id)) return null;
+    try {
+      const r = await this.call({ action: "getFile", id });
+      return r.data && r.mimeType ? { mimeType: r.mimeType, data: Buffer.from(r.data, "base64") } : null;
+    } catch (e) {
+      // Drive answers an unknown id with "No item with the given ID could be found"; the script with "Not found."
+      if (e instanceof Error && /not found|no item with the given id/i.test(e.message)) return null;
+      throw e;
+    }
   }
 }
