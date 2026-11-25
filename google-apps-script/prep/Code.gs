@@ -162,15 +162,44 @@ function setup_(ss, schema) {
 var FILES_FOLDER_NAME = "Tomhel BECE Prep Files";
 var MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-/** The files folder: FILES_FOLDER_ID if set, otherwise created next to the spreadsheet on first use. */
+/** The folder that holds the spreadsheet (pictures live next to it). */
+function sheetParent_(spreadsheetId) {
+  var parents = DriveApp.getFileById(spreadsheetId).getParents();
+  return parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+}
+
+/**
+ * The files folder: FILES_FOLDER_ID if set, otherwise found or created next to the spreadsheet.
+ * Created under a lock: several uploads arriving at once must not each make their own folder.
+ */
 function filesFolder_(props, spreadsheetId) {
   var id = props.getProperty("FILES_FOLDER_ID");
   if (id) return DriveApp.getFolderById(id);
-  var parents = DriveApp.getFileById(spreadsheetId).getParents();
-  var parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
-  var folder = parent.createFolder(FILES_FOLDER_NAME);
-  props.setProperty("FILES_FOLDER_ID", folder.getId());
-  return folder;
+  var lock = LockService.getScriptLock();
+  lock.waitLock(LOCK_WAIT_MS);
+  try {
+    id = props.getProperty("FILES_FOLDER_ID");
+    if (id) return DriveApp.getFolderById(id);
+    var parent = sheetParent_(spreadsheetId);
+    var existing = parent.getFoldersByName(FILES_FOLDER_NAME);
+    var folder = existing.hasNext() ? existing.next() : parent.createFolder(FILES_FOLDER_NAME);
+    props.setProperty("FILES_FOLDER_ID", folder.getId());
+    return folder;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * A picture folder of this portal: the files folder, or another folder of the same name next to the
+ * spreadsheet (left over from uploads that raced before the lock above existed).
+ */
+function isPictureFolder_(folder, filesFolderId, sheetParentId) {
+  if (folder.getId() === filesFolderId) return true;
+  if (folder.getName() !== FILES_FOLDER_NAME) return false;
+  var up = folder.getParents();
+  while (up.hasNext()) if (up.next().getId() === sheetParentId) return true;
+  return false;
 }
 
 function putFile_(props, spreadsheetId, payload) {
@@ -183,15 +212,45 @@ function putFile_(props, spreadsheetId, payload) {
 }
 
 function getFile_(props, spreadsheetId, id) {
-  var folderId = filesFolder_(props, spreadsheetId).getId();
+  var folder = filesFolder_(props, spreadsheetId);
+  var sheetParentId = sheetParent_(spreadsheetId).getId();
   var file = DriveApp.getFileById(String(id || ""));
-  // Only files in the portal's own folder: the secret must not open anything else in this Drive.
+  // Only files in the portal's own picture folders: the secret must not open anything else in this Drive.
   var parents = file.getParents();
-  var inFolder = false;
-  while (parents.hasNext()) if (parents.next().getId() === folderId) inFolder = true;
-  if (!inFolder) return { success: false, message: "Not found." };
+  var home = null;
+  while (parents.hasNext()) {
+    var p = parents.next();
+    if (isPictureFolder_(p, folder.getId(), sheetParentId)) home = p;
+  }
+  if (!home) return { success: false, message: "Not found." };
+  // A picture in a leftover folder moves into the files folder, so the leftovers empty out over time.
+  if (home.getId() !== folder.getId()) file.moveTo(folder);
   var blob = file.getBlob();
   return { success: true, mimeType: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
+}
+
+/**
+ * Run once from the Apps Script editor (select it, then Run) to move every picture from leftover
+ * "Tomhel BECE Prep Files" folders into the files folder and remove the empty leftovers.
+ * Pictures also move on their own the first time each is shown, so this is optional.
+ */
+function mergePictureFolders() {
+  var props = PropertiesService.getScriptProperties();
+  var spreadsheetId = props.getProperty("SPREADSHEET_ID");
+  var folder = filesFolder_(props, spreadsheetId);
+  var others = sheetParent_(spreadsheetId).getFoldersByName(FILES_FOLDER_NAME);
+  var moved = 0;
+  while (others.hasNext()) {
+    var other = others.next();
+    if (other.getId() === folder.getId()) continue;
+    var files = other.getFiles();
+    while (files.hasNext()) {
+      files.next().moveTo(folder);
+      moved++;
+    }
+    if (!other.getFiles().hasNext() && !other.getFolders().hasNext()) other.setTrashed(true);
+  }
+  Logger.log("Moved " + moved + " pictures into " + FILES_FOLDER_NAME + ".");
 }
 
 // ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@ vi.mock("next/cache", () => ({
   },
 }));
 
-const { GasBackend } = await import("@/lib/prep/store/gas-backend");
+const { GasBackend, packGrid, unpackGrid } = await import("@/lib/prep/store/gas-backend");
 type CacheFn = NonNullable<ConstructorParameters<typeof GasBackend>[0]["cacheFn"]>;
 
 /** A simple stand-in for the Next.js data cache: by key, cleared by tag. */
@@ -74,6 +74,39 @@ describe("reading the Google Sheet", () => {
     const gas = new GasBackend({ url: "https://example.test/exec", secret, cache: true, cacheFn: cache.fn });
     await Promise.all([gas.read(["Users"]), gas.read(["Classes", "Users"])]);
     expect(calls).toEqual([{ action: "read", tables: ["Users", "Classes"] }]);
+  });
+
+  it("caches big tabs compressed, well under the 2 MB Next.js limit", () => {
+    // Like the Questions tab with every past paper (8,400 rows, ~3.6 MB as JSON).
+    const grid = [["id", "code", "paperId", "text", "status"]];
+    const paper = crypto.randomUUID();
+    for (let i = 0; i < 8_400; i++) grid.push([crypto.randomUUID(), `SOC-2001-P1-${i}`, paper, `Which of the following is a question about topic ${i % 50}? `.repeat(6), "approved"]);
+    expect(JSON.stringify(grid).length).toBeGreaterThan(2 * 1024 * 1024);
+    const packed = packGrid(grid);
+    expect(packed).not.toBeNull();
+    expect(packed!.length).toBeLessThan(2 * 1024 * 1024);
+    expect(unpackGrid(packed!)).toEqual(grid);
+  });
+
+  it("keeps a tab too big for the data cache in memory, and drops it when the site writes to it", async () => {
+    const big = Array.from({ length: 60_000 }, () => [crypto.randomUUID() + crypto.randomUUID() + crypto.randomUUID()]);
+    expect(packGrid(big)).toBeNull();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: { body: string }) => {
+        calls.push({ action: JSON.parse(init.body).action });
+        return { status: 200, json: async () => ({ success: true, tables: { McqOptions: big } }) };
+      }),
+    );
+    const cache = memoryCache();
+    const gas = new GasBackend({ url: "https://example.test/exec", secret, cache: true, cacheFn: cache.fn });
+    expect((await gas.read(["McqOptions"])).McqOptions).toHaveLength(60_000);
+    expect((await gas.read(["McqOptions"])).McqOptions).toHaveLength(60_000);
+    expect(calls).toEqual([{ action: "read" }]);
+
+    await gas.write([{ op: "update", table: "McqOptions", id: "a", set: {} }]);
+    expect((await gas.read(["McqOptions"])).McqOptions).toHaveLength(60_000);
+    expect(calls).toEqual([{ action: "read" }, { action: "write" }, { action: "read" }]);
   });
 
   it("reads straight from Google without the cache (scripts)", async () => {
