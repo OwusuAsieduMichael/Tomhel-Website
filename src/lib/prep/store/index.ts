@@ -3,10 +3,13 @@ import path from "node:path";
 import { LocalFileBackend, type Backend, type RawOp, type StoredFile } from "./backend";
 import { decodeSheet, encodeRow, sheetSchema } from "./codec";
 import { GasBackend } from "./gas-backend";
-import { tables, type RowOf, type TableName } from "./schema";
+import { PostgresBackend, RoutingBackend } from "./postgres-backend";
+import { postgresClient } from "./postgres-client";
+import { DATABASE_TABLES, tables, type RowOf, type TableName } from "./schema";
 
 export { FILE_ID, PICTURE_TYPES, StoreConflictError, StoreNotFoundError, type StoredFile } from "./backend";
 export * from "./schema";
+export { sheetSchema } from "./codec";
 
 /** One change in a write batch. Build with insert / update / remove. */
 export type WriteOp = { __brand: "WriteOp"; raw: RawOp };
@@ -64,13 +67,30 @@ export const LOCAL_DATA_FILE = path.join(process.cwd(), ".prep-local", "data.jso
 
 /** Picks the backend from the environment. Used by scripts (no Next.js cache) and by getStore. */
 export function storeFromEnv(opts: { cache: boolean }): Store {
+  return new Store(withDatabase(mainBackendFromEnv(opts)));
+}
+
+/** The Google Sheet (or, in development, the local file), without the database. */
+export function mainBackendFromEnv(opts: { cache: boolean }): Backend {
   const url = process.env.PREP_GAS_URL;
-  if (url) return new Store(new GasBackend({ url, secret: process.env.PREP_GAS_SECRET ?? "", cache: opts.cache }));
+  if (url) return new GasBackend({ url, secret: process.env.PREP_GAS_SECRET ?? "", cache: opts.cache });
   if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
     throw new Error("PREP_GAS_URL is not set. See docs/PREP_APPS_SCRIPT_SETUP.md.");
   }
-  return new Store(new LocalFileBackend(LOCAL_DATA_FILE));
+  return new LocalFileBackend(LOCAL_DATA_FILE);
 }
+
+/**
+ * With PREP_DATABASE_URL set, the newer features' tables (DATABASE_TABLES) live in that Postgres database;
+ * without it they are tabs in the Sheet like the rest. `npm run prep:move-to-database` copies them across.
+ */
+function withDatabase(main: Backend): Backend {
+  const url = process.env.PREP_DATABASE_URL;
+  if (!url) return main;
+  return new RoutingBackend(main, new PostgresBackend(postgresClient(url)), databaseSheets());
+}
+
+export const databaseSheets = () => new Set(DATABASE_TABLES.map((t) => tables[t].sheet));
 
 const globalForStore = globalThis as unknown as { __prepStore?: Store };
 

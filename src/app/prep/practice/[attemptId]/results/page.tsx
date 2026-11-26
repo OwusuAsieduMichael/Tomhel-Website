@@ -7,6 +7,7 @@ import { requireRole } from "@/lib/prep/auth/current-user";
 import { fmtMarks, formatDayTime } from "@/lib/prep/format";
 import type { Highlight, PointResult } from "@/lib/prep/grading/theory";
 import { AttemptError, loadAttemptResults } from "@/lib/prep/practice/attempts";
+import { childOf, ParentError } from "@/lib/prep/parents";
 import { getStore } from "@/lib/prep/store";
 import { cn } from "@/lib/utils";
 import { QuestionText } from "@/components/prep/question-text";
@@ -19,21 +20,44 @@ type Loaded = NonNullable<Awaited<ReturnType<typeof loadAttemptResults>>>;
 type Q = Loaded["questions"][number];
 
 export default async function ResultsPage({ params }: { params: Promise<{ attemptId: string }> }) {
-  const user = await requireRole("student");
+  const user = await requireRole("student", "parent");
   const { attemptId } = await params;
   if (!z.string().uuid().safeParse(attemptId).success) notFound();
+  const store = getStore();
+
+  // A parent sees their own child's results, read-only: the same page without "ask about this mark".
+  const parentView = user.role === "parent";
+  let studentId = user.id;
+  if (parentView) {
+    const owner = (await store.read("attempts")).attempts.find((a) => a.id === attemptId)?.studentId;
+    if (!owner) notFound();
+    try {
+      await childOf(store, user.id, owner);
+    } catch (e) {
+      if (e instanceof ParentError) notFound();
+      throw e;
+    }
+    studentId = owner;
+  }
 
   let data: Awaited<ReturnType<typeof loadAttemptResults>>;
   try {
-    data = await loadAttemptResults(getStore(), user.id, attemptId);
+    data = await loadAttemptResults(store, studentId, attemptId);
   } catch (e) {
     if (e instanceof AttemptError) notFound();
     throw e;
   }
-  if (!data) redirect(`/prep/practice/${attemptId}`);
+  if (!data) redirect(parentView ? `/prep/parent/${studentId}` : `/prep/practice/${attemptId}`);
 
   const { attempt, paper, questions, assignment, solutionsHidden } = data;
-  const backHref = assignment ? (assignment.category === "quiz" ? "/prep/student/academic/quiz" : "/prep/student/academic/assignments") : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}`;
+  const backHref = parentView
+    ? `/prep/parent/${studentId}`
+    : assignment
+      ? assignment.category === "quiz"
+        ? "/prep/student/academic/quiz"
+        : "/prep/student/academic/assignments"
+      : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}`;
+  const queryOn = parentView ? null : attempt.id;
   const score = attempt.score ?? 0;
   const max = attempt.maxScore ?? 0;
   const pending = attempt.pendingMarks ?? 0;
@@ -51,7 +75,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
       <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-prep-line bg-prep-surface px-5 py-3">
         <Link
           href={backHref}
-          aria-label={assignment ? (assignment.category === "quiz" ? "Back to quizzes" : "Back to assignments") : "Back to past papers"}
+          aria-label={parentView ? "Back to your child's work" : assignment ? (assignment.category === "quiz" ? "Back to quizzes" : "Back to assignments") : "Back to past papers"}
           className="-ml-3 flex size-11 items-center justify-center rounded-xl hover:bg-prep-primary-soft"
         >
           <ChevronLeft className="size-[22px]" aria-hidden />
@@ -112,7 +136,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
                   TO REVIEW ({review.length})
                 </h2>
                 {review.map((q) => (
-                  <McqReview key={q.id} q={q} attemptId={attempt.id} />
+                  <McqReview key={q.id} q={q} attemptId={queryOn} />
                 ))}
               </section>
             ) : (
@@ -123,24 +147,32 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
                 <summary className="flex min-h-12 cursor-pointer items-center text-sm font-bold">Questions you got right ({right.length})</summary>
                 <div className="flex flex-col gap-2.5 pb-3.5">
                   {right.map((q) => (
-                    <McqReview key={q.id} q={q} attemptId={attempt.id} />
+                    <McqReview key={q.id} q={q} attemptId={queryOn} />
                   ))}
                 </div>
               </details>
             ) : null}
           </>
         ) : (
-          questions.map((q) => <TheoryReview key={q.id} q={q} attemptId={attempt.id} />)
+          questions.map((q) => <TheoryReview key={q.id} q={q} attemptId={queryOn} />)
         )}
 
-        <div className="flex gap-2.5 pt-2">
-          <Link href={backHref} className="flex h-[52px] flex-1 items-center justify-center rounded-xl border border-prep-input bg-prep-surface text-[15px] font-bold">
-            {assignment ? (assignment.category === "quiz" ? "My quizzes" : "My assignments") : "Another paper"}
-          </Link>
-          <Link href="/prep/student/progress" className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
-            My progress
-          </Link>
-        </div>
+        {parentView ? (
+          <div className="pt-2">
+            <Link href={backHref} className="flex h-[52px] items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
+              Back to your child&apos;s work
+            </Link>
+          </div>
+        ) : (
+          <div className="flex gap-2.5 pt-2">
+            <Link href={backHref} className="flex h-[52px] flex-1 items-center justify-center rounded-xl border border-prep-input bg-prep-surface text-[15px] font-bold">
+              {assignment ? (assignment.category === "quiz" ? "My quizzes" : "My assignments") : "Another paper"}
+            </Link>
+            <Link href="/prep/student/progress" className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
+              My progress
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -157,7 +189,8 @@ function summariseTheory(questions: Q[]) {
   return parts.join(", ");
 }
 
-function McqReview({ q, attemptId }: { q: Q; attemptId: string }) {
+/** `attemptId` null: viewed by a parent, so no "ask about this mark". */
+function McqReview({ q, attemptId }: { q: Q; attemptId: string | null }) {
   if (q.result?.kind !== "mcq") return null;
   const { choice, correct, awarded } = q.result;
   const chosen = q.options.find((o) => o.label === choice);
@@ -186,7 +219,7 @@ function McqReview({ q, attemptId }: { q: Q; attemptId: string }) {
           Your teacher changed this mark to {fmtMarks(q.result.awarded)}/{fmtMarks(q.result.marks)}.{q.result.changed.note ? ` ${q.result.changed.note}` : ""}
         </p>
       ) : null}
-      <MarkQuery attemptId={attemptId} questionId={q.id} query={q.query} />
+      {attemptId ? <MarkQuery attemptId={attemptId} questionId={q.id} query={q.query} /> : null}
     </article>
   );
 }
@@ -222,7 +255,7 @@ const pointStyle: Record<PointResult["status"], { Icon: typeof Check; color: str
   review: { Icon: UserRound, color: "text-prep-muted", label: "Teacher to mark" },
 };
 
-function TheoryReview({ q, attemptId }: { q: Q; attemptId: string }) {
+function TheoryReview({ q, attemptId }: { q: Q; attemptId: string | null }) {
   const r = q.result;
   const text = q.answer.text?.trim() ?? "";
   const highlights = r?.kind === "theory" ? (r.status === "marked" ? r.theory.highlights : r.status === "returned" ? r.teacher.highlights : []) : [];
@@ -329,7 +362,7 @@ function TheoryReview({ q, attemptId }: { q: Q; attemptId: string }) {
           <p className="mb-3.5 text-sm leading-relaxed text-prep-muted whitespace-pre-line">{q.modelAnswer}</p>
         </details>
       ) : null}
-      {r?.kind === "theory" && r.status !== "teacher" ? <MarkQuery attemptId={attemptId} questionId={q.id} query={q.query} /> : null}
+      {attemptId && r?.kind === "theory" && r.status !== "teacher" ? <MarkQuery attemptId={attemptId} questionId={q.id} query={q.query} /> : null}
     </article>
   );
 }

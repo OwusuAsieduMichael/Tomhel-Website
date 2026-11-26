@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser, sessionCookieOptions } from "@/lib/prep/auth/current-user";
+import { findAccountById } from "@/lib/prep/auth/accounts";
 import { authenticate, loginErrorMessages } from "@/lib/prep/auth/login";
 import { hashPassword, passwordProblem, verifyPassword } from "@/lib/prep/auth/password";
 import { roleHome } from "@/lib/prep/auth/permissions";
@@ -13,7 +14,7 @@ import { getStore, update } from "@/lib/prep/store";
 export type FormState = { error?: string; success?: string };
 
 const loginSchema = z.object({
-  loginId: z.string().trim().min(1, "Enter your Student ID or Staff ID.").max(32),
+  loginId: z.string().trim().min(1, "Enter your Student ID, Staff ID or Parent ID.").max(32),
   password: z.string().min(1, "Enter your password.").max(128),
 });
 
@@ -55,16 +56,15 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
   if (problem) return { error: problem };
 
   const store = getStore();
-  const { users } = await store.read("users");
-  const row = users.find((u) => u.id === user.id);
-  if (!row || !(await verifyPassword(parsed.data.current, row.passwordHash))) {
+  const account = await findAccountById(store, user.id);
+  if (!account || !(await verifyPassword(parsed.data.current, account.row.passwordHash))) {
     return { error: "Your current password is not correct." };
   }
 
   // Bumping the session version signs out every other device; this one gets a fresh cookie.
-  const sessionVersion = row.sessionVersion + 1;
+  const sessionVersion = account.row.sessionVersion + 1;
   await store.write([
-    update("users", user.id, { passwordHash: await hashPassword(parsed.data.next), mustChangePassword: false, sessionVersion }),
+    update(account.table, user.id, { passwordHash: await hashPassword(parsed.data.next), mustChangePassword: false, sessionVersion }),
   ]);
   const { token, expiresAt } = createSessionToken({ id: user.id, sessionVersion });
   (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions(expiresAt));

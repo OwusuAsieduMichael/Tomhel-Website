@@ -12,7 +12,7 @@ export function LoginForm() {
     <form action={action} className="space-y-5" noValidate>
       <FormMessage error={state.error} />
       <Field
-        label="Student ID or staff ID"
+        label="Student, staff or parent ID"
         name="loginId"
         autoComplete="username"
         autoCapitalize="characters"

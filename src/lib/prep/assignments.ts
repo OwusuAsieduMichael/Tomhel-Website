@@ -1,3 +1,4 @@
+import type { SessionRole } from "@/lib/prep/auth/accounts";
 import { z } from "zod";
 import { formatDayTime, formatTime } from "./format";
 import { noticeOps } from "./notices";
@@ -16,7 +17,6 @@ import {
   type Assignment,
   type Attempt,
   type Question,
-  type Role,
   type SchoolClass,
   type Store,
 } from "./store";
@@ -62,7 +62,7 @@ export class AssignmentError extends Error {
   }
 }
 
-type Actor = { id: string; role: Role };
+type Actor = { id: string; role: SessionRole };
 
 /** Ghana keeps UTC+0 all year (no daylight saving), so a school-local date-time is the same as UTC. */
 export const SCHOOL_TIME_ZONE = "Africa/Accra";
