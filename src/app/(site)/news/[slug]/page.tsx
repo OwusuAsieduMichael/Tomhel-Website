@@ -5,8 +5,11 @@ import { BackLink } from "@/components/layout/back-link";
 import { BelowHeroShell } from "@/components/layout/below-hero-shell";
 import { Container, Section } from "@/components/layout/container";
 import { Badge } from "@/components/ui/badge";
-import { getNewsArticle, getNewsArticles } from "@/lib/sanity";
+import { formatEventDates, getNewsArticle, getNewsArticles } from "@/lib/sanity";
 import { siteConfig } from "@/lib/constants";
+
+/** Posts written in the portal appear within five minutes (at once after saving, which refreshes the page). */
+export const revalidate = 300;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -56,6 +59,11 @@ export default async function NewsArticlePage({ params }: PageProps) {
             day: "numeric",
           })}
         </time>
+        {article.eventStart ? (
+          <p className="mt-3 inline-flex rounded-full bg-accent/10 px-4 py-1.5 text-sm font-semibold text-primary">
+            When: {formatEventDates(article.eventStart, article.eventEnd)}
+          </p>
+        ) : null}
 
         {article.image && (
           <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-2xl">
@@ -71,12 +79,6 @@ export default async function NewsArticlePage({ params }: PageProps) {
               {paragraph}
             </p>
           ))}
-          {!article.body?.length && (
-            <p className="mt-6 leading-relaxed">
-              This article is managed through Sanity CMS. Connect your Sanity project to publish full article content
-              with rich text, images, and embedded media.
-            </p>
-          )}
         </div>
         </div>
       </Container>

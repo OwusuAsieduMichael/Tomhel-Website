@@ -1,7 +1,9 @@
 import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GraduationBanner } from "@/components/prep/graduation-banner";
 import { PageHeading, PrepCard } from "@/components/prep/ui";
+import { classOf, graduationOf } from "@/lib/prep/graduation";
 import { requireRole } from "@/lib/prep/auth/current-user";
 import { childrenOf } from "@/lib/prep/parents";
 import { getStudentClass } from "@/lib/prep/queries";
@@ -16,14 +18,24 @@ export default async function ParentHomePage() {
   const children = await childrenOf(store, user.id);
   const cards = await Promise.all(
     children.map(async (c) => {
-      const [schoolClass, report] = await Promise.all([getStudentClass(store, c.classId), fullReport(store, c)]);
-      return { child: c, className: schoolClass?.name ?? null, report };
+      const [schoolClass, report, graduation] = await Promise.all([getStudentClass(store, c.classId), fullReport(store, c), graduationOf(store, c.id)]);
+      return { child: c, className: schoolClass?.name ?? null, report, graduation };
     }),
   );
 
   return (
     <>
       <PageHeading title="My children" description="Their BECE Prep, quizzes and assignments. You can look, but not change anything." />
+      {cards
+        .filter((c) => c.graduation)
+        .map(({ child, graduation }) => (
+          <GraduationBanner
+            key={child.id}
+            heading={`Congratulations! ${child.name} has graduated.`}
+            line={["Tomhel Preparatory School", classOf(graduation!.academicYear)].filter(Boolean).join(" · ")}
+            message={`Thank you for your support through their Junior High School years. We wish ${child.name.split(" ")[0]} every success in their future endeavours.`}
+          />
+        ))}
       {cards.length ? (
         <ul className="space-y-3">
           {cards.map(({ child, className, report }) => (

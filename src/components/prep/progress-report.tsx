@@ -54,7 +54,7 @@ function BeceSection({ part, attemptHref, who }: { part: StudentReport["bece"]; 
             <Tile label="Average" value={pctText(part.average)} />
             <Tile label="Best" value={pctText(part.best)} />
           </dl>
-          <TrendChart items={part.items} label="BECE Prep scores, oldest to newest" />
+          <TrendChart items={part.history} label="BECE Prep scores, every attempt, oldest to newest" />
           <SubjectBars lines={part.bySubject} caption="BECE Prep average by subject" />
           <ItemList items={part.items} attemptHref={attemptHref} />
         </>
@@ -225,6 +225,7 @@ function ItemList({ items, attemptHref }: { items: ReportItem[]; attemptHref: (i
               <span className="text-[13px] text-prep-muted">
                 {i.subjectName} · {formatDayTime(i.at)}
                 {i.pendingMarks ? " · some marks with the teacher" : ""}
+                {i.earlier?.length ? <span className="block">Earlier tries: {[...i.earlier].reverse().map((e) => (e.marked > 0 ? `${fmtMarks(e.score)}/${fmtMarks(e.marked)}` : "marking")).join(" → ")}</span> : null}
               </span>
             </div>
             <span className={cn("text-right text-sm font-bold tabular-nums", tone(i.percent))}>

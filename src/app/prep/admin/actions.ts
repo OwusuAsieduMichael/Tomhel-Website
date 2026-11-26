@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { sheetProblemMessage } from "@/lib/prep/errors";
 import { z } from "zod";
+import { graduateClass, GraduationError, undoGraduation } from "@/lib/prep/graduation";
 import { ensureParents, moveChildToParent, ParentError, studentsWithoutParents, type NewParent } from "@/lib/prep/parents";
 import {
   AccountError,
@@ -114,6 +115,42 @@ export async function importAccountsAction(_prev: ImportFormState, formData: For
     if (problem) return { error: problem };
     throw e;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Graduation
+// ---------------------------------------------------------------------------
+
+export type GraduationState = { error?: string; success?: string };
+
+/** Graduates a final-year class: from the date, its students and their parents see the congratulations. */
+export async function graduateClassAction(_prev: GraduationState, formData: FormData): Promise<GraduationState> {
+  const admin = await requireRole("admin");
+  const classId = z.string().uuid().safeParse(formData.get("classId"));
+  const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(formData.get("graduatedOn"));
+  if (!classId.success) return { error: "Unknown class." };
+  if (!day.success) return { error: "Choose the graduation date." };
+  try {
+    const { added } = await graduateClass(getStore(), admin.id, classId.data, {
+      graduatedOn: new Date(`${day.data}T00:00:00Z`),
+      message: String(formData.get("message") ?? ""),
+    });
+    revalidatePath("/prep", "layout");
+    return { success: `${added} ${added === 1 ? "student has" : "students have"} graduated. They and their parents see the message from ${day.data}.` };
+  } catch (e) {
+    if (e instanceof GraduationError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
+    throw e;
+  }
+}
+
+export async function undoGraduationAction(formData: FormData) {
+  await requireRole("admin");
+  const classId = z.string().uuid().safeParse(formData.get("classId"));
+  if (!classId.success) return;
+  await undoGraduation(getStore(), classId.data);
+  revalidatePath("/prep", "layout");
 }
 
 // ---------------------------------------------------------------------------

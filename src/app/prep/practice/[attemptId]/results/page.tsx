@@ -12,6 +12,7 @@ import { getStore } from "@/lib/prep/store";
 import { cn } from "@/lib/utils";
 import { QuestionText } from "@/components/prep/question-text";
 import { MarkQuery } from "./mark-query";
+import { RetakeButton } from "./retake-button";
 
 export const metadata: Metadata = { title: "Results" };
 export const dynamic = "force-dynamic";
@@ -56,7 +57,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
       ? assignment.category === "quiz"
         ? "/prep/student/academic/quiz"
         : "/prep/student/academic/assignments"
-      : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}`;
+      : `/prep/student/subjects/${paper.subjectCode.toLowerCase()}/test`;
   const queryOn = parentView ? null : attempt.id;
   const score = attempt.score ?? 0;
   const max = attempt.maxScore ?? 0;
@@ -168,9 +169,13 @@ export default async function ResultsPage({ params }: { params: Promise<{ attemp
             <Link href={backHref} className="flex h-[52px] flex-1 items-center justify-center rounded-xl border border-prep-input bg-prep-surface text-[15px] font-bold">
               {assignment ? (assignment.category === "quiz" ? "My quizzes" : "My assignments") : "Another paper"}
             </Link>
-            <Link href="/prep/student/progress" className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
-              My progress
-            </Link>
+            {!assignment && attempt.paperId ? (
+              <RetakeButton attemptId={attempt.id} />
+            ) : (
+              <Link href="/prep/student/progress" className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-prep-primary text-[15px] font-bold text-white">
+                My progress
+              </Link>
+            )}
           </div>
         )}
       </main>

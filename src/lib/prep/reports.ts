@@ -32,6 +32,8 @@ export type ReportItem = {
   pendingMarks: number;
   /** Score as a percentage of `marked`, or null while nothing has been marked. */
   percent: number | null;
+  /** BECE papers taken more than once: the earlier attempts, newest first (this item is the latest). */
+  earlier?: { attemptId: string; at: Date; score: number; marked: number; percent: number | null }[];
 };
 
 export type SubjectLine = { subjectId: string; name: string; done: number; average: number | null };
@@ -40,7 +42,11 @@ type Summary = { done: number; average: number | null; best: number | null; bySu
 
 /** Practice mode (mixed years) per subject: questions mastered out of the subject's questions. */
 export type PracticeLine = { subjectId: string; name: string; total: number; mastered: number; toRedo: number };
-export type BecePart = Summary & { practice: PracticeLine[] };
+/**
+ * BECE Prep (Test mode): one item per paper, its latest attempt, so a retake replaces the earlier score in the
+ * counts and averages. `history` keeps every attempt, newest first, for the trend.
+ */
+export type BecePart = Summary & { practice: PracticeLine[]; history: ReportItem[] };
 /** Set work: how much was set, done, still open, and missed (closed without being done). */
 export type WorkPart = Summary & { set: number; open: number; missed: number; missedTitles: string[] };
 
@@ -97,10 +103,20 @@ export function buildReport(data: ReportData, student: Pick<User, "id" | "classI
   const visible = (subjectId: string | undefined) => !!subjectId && (!subjects || subjects.has(subjectId));
   const mine = data.attempts.filter((t) => t.studentId === student.id);
 
-  const practice = mine
+  const taken = mine
     .filter((t) => !t.assignmentId && t.status === "submitted")
-    .map((t) => itemOf(data, t))
-    .filter((i): i is ReportItem => !!i && visible(i.subjectId));
+    .map((t) => ({ t, item: itemOf(data, t) }))
+    .filter((x): x is { t: Attempt; item: ReportItem } => !!x.item && visible(x.item.subjectId))
+    .sort((a, b) => b.item.at.getTime() - a.item.at.getTime());
+  // One entry per paper: the latest attempt, with the earlier ones attached.
+  const byPaper = new Map<string, ReportItem>();
+  for (const { t, item } of taken) {
+    const key = t.paperId ?? t.id;
+    const latest = byPaper.get(key);
+    if (!latest) byPaper.set(key, { ...item, earlier: [] });
+    else latest.earlier!.push({ attemptId: item.attemptId, at: item.at, score: item.score, marked: item.marked, percent: item.percent });
+  }
+  const practice = [...byPaper.values()];
 
   const work = (category: Assignment["category"]): WorkPart => {
     const set = data.assignments.filter(
@@ -128,7 +144,7 @@ export function buildReport(data: ReportData, student: Pick<User, "id" | "classI
 
   const activity = mine.map((t) => (t.submittedAt ?? t.startedAt).getTime());
   return {
-    bece: { ...summarise(practice), practice: mixedSummary(data, student.id, subjects) },
+    bece: { ...summarise(practice), practice: mixedSummary(data, student.id, subjects), history: taken.map((x) => x.item) },
     quizzes: work("quiz"),
     assignments: work("assignment"),
     lastActive: activity.length ? new Date(Math.max(...activity)) : null,

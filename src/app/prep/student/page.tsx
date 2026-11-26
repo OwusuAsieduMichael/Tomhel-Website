@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Bell, BookOpen, ClipboardList, Timer } from "lucide-react";
 import { PageHeading, PrepCard } from "@/components/prep/ui";
 import { listStudentAssignments, workHref } from "@/lib/prep/assignments";
+import { GraduationBanner } from "@/components/prep/graduation-banner";
 import { requireRole } from "@/lib/prep/auth/current-user";
+import { classOf, graduationOf } from "@/lib/prep/graduation";
 import { formatAgo, formatDayTime } from "@/lib/prep/format";
 import { listNotices } from "@/lib/prep/notices";
 import { getStudentClass } from "@/lib/prep/queries";
@@ -25,7 +27,12 @@ export default async function StudentHome() {
   const user = await requireRole("student");
   const store = getStore();
   const now = new Date();
-  const [schoolClass, notices, work] = await Promise.all([getStudentClass(store, user.classId), listNotices(store, user.id, 8), listStudentAssignments(store, user, now)]);
+  const [schoolClass, notices, work, graduation] = await Promise.all([
+    getStudentClass(store, user.classId),
+    listNotices(store, user.id, 8),
+    listStudentAssignments(store, user, now),
+    graduationOf(store, user.id, now),
+  ]);
   const firstName = user.name.split(" ")[0];
   const unread = notices.filter((n) => !n.readAt).length;
   const dueSoon = work.filter((a) => a.state === "open" && a.status !== "submitted" && a.closesAt.getTime() - now.getTime() < DUE_SOON_MS);
@@ -33,6 +40,14 @@ export default async function StudentHome() {
   return (
     <>
       <PageHeading title={`Hello, ${firstName}`} description={schoolClass ? `${schoolClass.name} · ${schoolClass.academicYear}` : undefined} />
+
+      {graduation ? (
+        <GraduationBanner
+          heading={`Congratulations, ${firstName}!`}
+          line={["You graduated from Tomhel Preparatory School", classOf(graduation.academicYear)].filter(Boolean).join(" · ")}
+          message={graduation.message}
+        />
+      ) : null}
 
       {dueSoon.length ? (
         <section aria-labelledby="due" className="mb-5 flex flex-col gap-2.5">
