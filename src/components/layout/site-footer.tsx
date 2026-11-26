@@ -77,6 +77,14 @@ export function SiteFooter() {
               </a>
             </div>
             <p className="mt-6 text-sm text-white/60">{siteConfig.officeHours}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/pay-fees" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-white/90">
+                Pay Fees
+              </Link>
+              <Link href="/donate" className="rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+                Donate
+              </Link>
+            </div>
           </div>
         </div>
 
