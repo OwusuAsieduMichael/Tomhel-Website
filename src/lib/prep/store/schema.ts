@@ -50,6 +50,11 @@ export const WORK_CATEGORIES = ["assignment", "quiz"] as const;
 /** The website's News & Events tabs. */
 export const NEWS_CATEGORIES = ["Events", "Announcements", "Achievements"] as const;
 export const NEWS_STATUSES = ["draft", "published"] as const;
+export const TERMS = ["Term 1", "Term 2", "Term 3"] as const;
+export const PAYMENT_KINDS = ["fee", "donation"] as const;
+/** pending: sent to Paystack, not confirmed yet. success: Paystack confirmed it. failed: refused or abandoned. */
+export const PAYMENT_STATUSES = ["pending", "success", "failed"] as const;
+export const CAMPAIGN_STATUSES = ["open", "closed"] as const;
 
 export const tables = {
   classes: {
@@ -310,6 +315,66 @@ export const tables = {
       createdAt: date,
     },
   },
+  feeItems: {
+    sheet: "FeeItems",
+    /** The school fee for one class and term, set by an admin. Amounts are in pesewas (GH₵ 1 = 100). */
+    columns: {
+      id: str,
+      classId: str,
+      term: oneOf(TERMS),
+      /** classId + term, unique: one fee per class and term. */
+      itemKey: str,
+      amount: num,
+      createdAt: date,
+      updatedAt: date,
+    },
+  },
+  payments: {
+    sheet: "Payments",
+    /**
+     * One payment through Paystack: school fees for a student and term, or a donation. Made "pending" before the
+     * payer goes to Paystack; only Paystack's own confirmation makes it "success". Amounts in pesewas.
+     */
+    columns: {
+      id: str,
+      kind: oneOf(PAYMENT_KINDS),
+      /** Our reference, sent to Paystack and shown on the receipt. Unique. */
+      reference: str,
+      status: oneOf(PAYMENT_STATUSES),
+      amount: num,
+      currency: str,
+      /** Fees: whose and which term. */
+      studentId: optStr,
+      feeItemId: optStr,
+      /** Donations: which project (empty: the general fund). */
+      campaignId: optStr,
+      payerName: str,
+      payerPhone: optStr,
+      payerEmail: optStr,
+      /** Donations only: show the name publicly? */
+      anonymous: bool,
+      message: optStr,
+      /** From Paystack: mobile_money, card, bank... */
+      channel: optStr,
+      paidAt: optDate,
+      createdAt: date,
+      updatedAt: date,
+    },
+  },
+  campaigns: {
+    sheet: "Campaigns",
+    /** A fundraising project people can donate to on the website. Goal in pesewas (0: no goal). */
+    columns: {
+      id: str,
+      slug: str,
+      title: str,
+      description: str,
+      goal: num,
+      status: oneOf(CAMPAIGN_STATUSES),
+      createdAt: date,
+      updatedAt: date,
+    },
+  },
   newsPosts: {
     sheet: "NewsPosts",
     /** News and dates on the public website (News & Events), written by admins in the portal. */
@@ -341,7 +406,16 @@ export type TableName = keyof typeof tables;
  * Tables of the newer features. With PREP_DATABASE_URL set they live in the Postgres database (Supabase)
  * instead of the Sheet, the first step of moving off Google Sheets. See store/index.ts.
  */
-export const DATABASE_TABLES = ["parents", "parentLinks", "practiceItems", "graduations", "newsPosts"] as const satisfies readonly TableName[];
+export const DATABASE_TABLES = [
+  "parents",
+  "parentLinks",
+  "practiceItems",
+  "graduations",
+  "newsPosts",
+  "feeItems",
+  "payments",
+  "campaigns",
+] as const satisfies readonly TableName[];
 
 type ValueOf<C> = C extends { type: "enum"; values: readonly (infer V)[] }
   ? V
@@ -379,3 +453,6 @@ export type ParentLink = RowOf<"parentLinks">;
 export type PracticeItem = RowOf<"practiceItems">;
 export type Graduation = RowOf<"graduations">;
 export type NewsPost = RowOf<"newsPosts">;
+export type FeeItem = RowOf<"feeItems">;
+export type Payment = RowOf<"payments">;
+export type Campaign = RowOf<"campaigns">;

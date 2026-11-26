@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, ClipboardList, Home, Inbox, Library, Newspaper, School, User, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, ClipboardList, Home, Inbox, Library, Newspaper, School, User, Users, Wallet, type LucideIcon } from "lucide-react";
 import { isActive, type NavIcon, type NavItem } from "@/lib/prep/nav";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ const icons: Record<NavIcon, LucideIcon> = {
   school: School,
   library: Library,
   news: Newspaper,
+  wallet: Wallet,
 };
 
 function Badge({ n, className }: { n: number; className?: string }) {

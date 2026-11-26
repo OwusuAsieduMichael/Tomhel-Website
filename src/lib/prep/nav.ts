@@ -1,6 +1,6 @@
 import type { SessionRole as Role } from "@/lib/prep/auth/accounts";
 
-export type NavIcon = "home" | "book" | "chart" | "user" | "clipboard" | "inbox" | "users" | "school" | "library" | "news";
+export type NavIcon = "home" | "book" | "chart" | "user" | "clipboard" | "inbox" | "users" | "school" | "library" | "news" | "wallet";
 
 export type NavItem = { label: string; href: string; icon: NavIcon };
 
@@ -25,6 +25,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "Classes & subjects", href: "/prep/admin/classes", icon: "school" },
     { label: "Questions", href: "/prep/admin/questions", icon: "library" },
     { label: "Website news", href: "/prep/admin/news", icon: "news" },
+    { label: "Payments", href: "/prep/admin/payments", icon: "wallet" },
     { label: "Profile", href: "/prep/admin/profile", icon: "user" },
   ],
   parent: [
