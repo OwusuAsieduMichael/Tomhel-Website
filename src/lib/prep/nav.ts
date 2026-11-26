@@ -16,6 +16,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "Dashboard", href: "/prep/teacher", icon: "home" },
     { label: "Quizzes & assignments", href: "/prep/teacher/assignments", icon: "clipboard" },
     { label: "Review queue", href: "/prep/teacher/review", icon: "inbox" },
+    { label: "Student progress", href: "/prep/teacher/students", icon: "chart" },
     { label: "Profile", href: "/prep/teacher/profile", icon: "user" },
   ],
   admin: [

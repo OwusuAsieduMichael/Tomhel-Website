@@ -24,7 +24,7 @@ export function AppShell({ user, children, badges = {} }: { user: SessionUser; c
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-prep-line bg-prep-surface/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-prep-line bg-prep-surface/95 backdrop-blur print:hidden">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
           <Link href={items[0].href} className="flex min-h-11 items-center gap-2.5" aria-label="Academic Prep home">
             <Image src={schoolImages.logo} alt="" width={36} height={36} className="h-9 w-9 rounded-full object-cover" />
@@ -51,13 +51,17 @@ export function AppShell({ user, children, badges = {} }: { user: SessionUser; c
       </header>
 
       <div className="mx-auto flex max-w-6xl gap-8 px-4 md:py-8">
-        <PrepNav items={items} variant="side" badges={badges} />
+        <div className="contents print:hidden">
+          <PrepNav items={items} variant="side" badges={badges} />
+        </div>
         <main id="prep-main" className="min-w-0 flex-1 py-6 md:py-0">
           {children}
         </main>
       </div>
 
-      <PrepNav items={items} variant="bottom" badges={badges} />
+      <div className="contents print:hidden">
+        <PrepNav items={items} variant="bottom" badges={badges} />
+      </div>
     </div>
   );
 }
