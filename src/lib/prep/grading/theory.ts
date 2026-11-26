@@ -8,6 +8,8 @@
  * - strictness "exact": spelling of every matched word counts. "meaning": other words may be misspelt.
  *   "rubric": can't be decided by rules, so the point goes to a teacher.
  * - A piece of the answer earns at most one point, so "State two ..." needs two different things.
+ * - An accepted answer written "a | b | c" is one answer in several wordings: it earns a point once,
+ *   so "mediation by a third party" can't count as two of the scheme's ways of resolving conflict.
  *
  * Not yet detected: wrong statements (e.g. "stored as protein"). That needs the AI marking step.
  */
@@ -189,10 +191,14 @@ export function markTheory(answerText: string, points: MarkingPoint[]): TheoryRe
 
     // 2. Best match among the accepted answers (all words) and the description (most words).
     let match: (PhraseMatch & { alternative: boolean; phrase: string }) | null = null;
+    // "a | b | c" is one answer in several wordings: any of them earns the point, and the group is then credited.
     for (const c of [...p.acceptedAlternatives.map((phrase) => ({ phrase, alternative: true })), { phrase: p.description, alternative: false }]) {
       if (credited.has(normalise(c.phrase))) continue;
-      const m = matchPhrase(answer, c.phrase, used, c.alternative ? all : most);
-      if (m && (!match || m.misspelt.length < match.misspelt.length)) match = { ...m, alternative: c.alternative, phrase: c.phrase };
+      for (const wording of c.alternative ? c.phrase.split(/\s+\|\s+/) : [c.phrase]) {
+        const m = matchPhrase(answer, wording, used, c.alternative ? all : most);
+        if (m && (!match || m.misspelt.length < match.misspelt.length)) match = { ...m, alternative: c.alternative, phrase: c.phrase };
+        if (match && !match.misspelt.length) break;
+      }
       if (match && !match.misspelt.length) break;
     }
     if (match && p.strictness === "exact" && match.misspelt.length) {

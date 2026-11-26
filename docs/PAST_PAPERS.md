@@ -52,9 +52,35 @@ Word books keep their equations and diagrams as pictures, which the converter wr
 
 Then import: `npx tsx scripts/import-papers.ts private/papers/ready/<files>` (in batches of about 25 on Windows, whose command line is limited in length).
 
-## 2. Theory papers (written by hand from the marking scheme)
+## 2. Theory papers
 
-Theory questions can't be converted automatically. They depend on diagrams, sub-parts and "[ANY TWO]" style schemes that need judgement. Write them as JSON using the same format. `private/papers/SCI-2021-P2.json` (Science 2021 Paper 2, Section B) is the worked example. Each sub-part such as 3(b)(ii) is its own question, with marking points taken from the scheme:
+### From the Word books (semi-automatic)
+
+```bash
+npm run pasco:theory -- private/pasco/html/Social_Studies_1990-2021_Qu_and_Ans.htm --subject SOC --year 2021
+# -> private/papers/theory/SOC-2021-P2.json + SOC-2021-P2.review.txt
+```
+
+Each sub-part such as 2(a)(i) becomes its own question, with marking points from the book's scheme:
+
+| The question and its scheme | Marking points |
+|---|---|
+| "State / List / Name four …", a list ("[ANY FOUR]") | Four points of equal marks. Each accepts any item of the list, and an item counts once. |
+| "Highlight four …" + "Write an essay … to explain" (8 or 12 marks) | Per point: 1 mark for naming it, marked automatically. The rest, for explaining it, is marked by a teacher. |
+| "… with an example each" | The same split; the example goes to a teacher. |
+| Examples by category ("Festivals: Aboakyer, Kundum …") | Any example of a category earns the point. |
+| A calculation | The final answer, exactly. |
+| Anything else (definitions, diagrams) | One point marked by a teacher, with the scheme as the model answer. |
+
+An accepted answer written `a | b | c` is one answer in several wordings: it earns a mark once, so "mediation by a mediator" isn't two of the scheme's ways. The converter makes shorter forms of each scheme line (without "e.g." tails, split at "/", without "Encouraging" or "There should be"). Those are rarely enough, because the marker needs all of an answer's content words, so **`private/papers/theory/extras.json`** adds hand-checked wordings per question ("coat of arms" where the scheme says "The Ghana Coat Of Arms"). It can also replace a question's points outright, for example a definition split into its ideas. Start each extra with a word from its scheme point, so it joins that point. The file is private (it quotes the scheme) and is applied every time the converter runs.
+
+The paper's "answer one question from each section" isn't enforced yet: every question is included, and the instructions say which to answer.
+
+**Then read the `.review.txt` file**, and try answers against the points before importing.
+
+### Written by hand from the marking scheme
+
+For papers the converter can't read (diagrams, worked solutions), write the JSON yourself in the same format. `private/papers/SCI-2021-P2.json` (Science 2021 Paper 2, Section B) is the worked example. Each sub-part such as 3(b)(ii) is its own question, with marking points taken from the scheme:
 
 ```json
 {
