@@ -77,3 +77,17 @@ describe("RoutingBackend", () => {
     expect(Object.keys(await b.read(["People", "Links"])).sort()).toEqual(["Links", "People"]);
   });
 });
+
+describe("Postgres safety", () => {
+  it("switches on row-level security for every table, so Supabase's public web API can't read them", async () => {
+    const sql = await freshPostgres();
+    await new PostgresBackend(sql).setup(schema);
+    const rows = await sql.query(
+      "select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = current_schema() and c.relkind = 'r' order by c.relname",
+    );
+    expect(rows).toEqual([
+      { relname: "Links", relrowsecurity: true },
+      { relname: "People", relrowsecurity: true },
+    ]);
+  });
+});
