@@ -1,9 +1,10 @@
+import type { SessionRole } from "@/lib/prep/auth/accounts";
 import { z } from "zod";
 import { scopeOf, type Scope } from "./assignments";
 import type { Highlight } from "./grading/theory";
 import { noticeOps } from "./notices";
 import { attemptContext, attemptQuestions, PAPER_TABLES, readAnswers, solutionsHiddenUntil, totals, type QuestionResult, type Results, type TeacherMark } from "./practice/attempts";
-import { insert, newId, update, type Attempt, type Role, type Store, type User, type WriteOp } from "./store";
+import { insert, newId, update, type Attempt, type Store, type User, type WriteOp } from "./store";
 
 /**
  * Teacher marking.
@@ -23,7 +24,7 @@ export class ReviewError extends Error {
   }
 }
 
-type Actor = { id: string; role: Role };
+type Actor = { id: string; role: SessionRole };
 
 const REVIEW_TABLES = ["attempts", "users", "classes", "assignments", "markQueries", ...PAPER_TABLES] as const;
 type ReviewData = Awaited<ReturnType<typeof readReview>>;

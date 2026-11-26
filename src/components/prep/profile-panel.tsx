@@ -24,7 +24,7 @@ export async function ProfilePanel({ user }: { user: SessionUser }) {
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
           <dt className="text-prep-muted">Name</dt>
           <dd className="font-semibold">{user.name}</dd>
-          <dt className="text-prep-muted">{user.role === "student" ? "Student ID" : "Staff ID"}</dt>
+          <dt className="text-prep-muted">{user.role === "student" ? "Student ID" : user.role === "parent" ? "Parent ID" : "Staff ID"}</dt>
           <dd className="font-semibold">{user.loginId}</dd>
           <dt className="text-prep-muted">Role</dt>
           <dd className="font-semibold">{roleLabel[user.role]}</dd>

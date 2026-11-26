@@ -1,13 +1,15 @@
-import type { Role, Store } from "@/lib/prep/store";
+import type { Store } from "@/lib/prep/store";
+import type { SessionRole } from "./accounts";
 
 /** Where each role lands after logging in. */
-export const roleHome: Record<Role, string> = {
+export const roleHome: Record<SessionRole, string> = {
   student: "/prep/student",
   teacher: "/prep/teacher",
   admin: "/prep/admin",
+  parent: "/prep/parent",
 };
 
-type Actor = { id: string; role: Role };
+type Actor = { id: string; role: SessionRole };
 
 /** Subject IDs a teacher is assigned to (any class). */
 export async function teacherSubjectIds(store: Store, teacherId: string): Promise<string[]> {

@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Store, User } from "@/lib/prep/store";
+import { findAccountById, type SessionRole } from "./accounts";
 
 /**
  * Signed-cookie sessions. The cookie holds the user's ID, their session version and an expiry,
@@ -12,7 +13,8 @@ export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /** Re-issue the cookie when less than this much time is left (sliding expiry). */
 const RENEW_WITHIN_MS = SESSION_TTL_MS / 2;
 
-export type SessionUser = Pick<User, "id" | "role" | "name" | "loginId" | "classId" | "mustChangePassword">;
+/** The logged-in account. Parents have no class. */
+export type SessionUser = Pick<User, "id" | "name" | "loginId" | "classId" | "mustChangePassword"> & { role: SessionRole };
 
 type Payload = { u: string; v: number; e: number };
 
@@ -63,16 +65,16 @@ export async function validateSessionToken(store: Store, token: string, now = ne
   const payload = readSessionToken(token, now);
   if (!payload) return null;
 
-  const { users } = await store.read("users");
-  const u = users.find((x) => x.id === payload.u);
-  if (!u || !u.active || u.sessionVersion !== payload.v) return null;
+  const account = await findAccountById(store, payload.u);
+  const u = account?.row;
+  if (!account || !u || !u.active || u.sessionVersion !== payload.v) return null;
 
   const user: SessionUser = {
     id: u.id,
-    role: u.role,
+    role: account.role,
     name: u.name,
     loginId: u.loginId,
-    classId: u.classId,
+    classId: account.table === "users" ? account.row.classId : null,
     mustChangePassword: u.mustChangePassword,
   };
   const renewed = payload.e - now.getTime() < RENEW_WITHIN_MS ? createSessionToken(u, now) : undefined;

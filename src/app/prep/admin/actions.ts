@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { sheetProblemMessage } from "@/lib/prep/errors";
 import { z } from "zod";
+import { ensureParents, moveChildToParent, ParentError, studentsWithoutParents, type NewParent } from "@/lib/prep/parents";
 import {
   AccountError,
   createAccount,
+  generateTempPassword,
   importAccounts,
   resetPassword,
   setAccountActive,
@@ -26,7 +28,8 @@ import { getStore, ROLES } from "@/lib/prep/store";
 /** A password shown once to the admin, to hand to the user. Never stored in plain text. */
 export type IssuedPassword = { loginId: string; name: string; tempPassword: string };
 
-export type AccountFormState = { error?: string; issued?: IssuedPassword };
+/** `parent`: the parent account made with a new student. */
+export type AccountFormState = { error?: string; issued?: IssuedPassword; parent?: IssuedPassword };
 
 const createSchema = z.object({
   loginId: z.string().trim().min(1, "Enter the Student ID or Staff ID.").max(32),
@@ -41,9 +44,12 @@ export async function createAccountAction(_prev: AccountFormState, formData: For
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   try {
-    const { tempPassword } = await createAccount(getStore(), parsed.data);
+    const { tempPassword, parent } = await createAccount(getStore(), parsed.data);
     revalidatePath("/prep/admin", "layout");
-    return { issued: { loginId: parsed.data.loginId.toUpperCase(), name: parsed.data.name, tempPassword } };
+    return {
+      issued: { loginId: parsed.data.loginId.toUpperCase(), name: parsed.data.name, tempPassword },
+      parent: parent ? { loginId: parent.loginId, name: `Parent of ${parsed.data.name}`, tempPassword: parent.tempPassword } : undefined,
+    };
   } catch (e) {
     if (e instanceof AccountError) return { error: e.message };
     const problem = sheetProblemMessage(e);
@@ -104,6 +110,52 @@ export async function importAccountsAction(_prev: ImportFormState, formData: For
     if (!result.problems.length) revalidatePath("/prep/admin", "layout");
     return { result };
   } catch (e) {
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
+    throw e;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Parent accounts
+// ---------------------------------------------------------------------------
+
+export type MissingParentsState = { error?: string; created?: NewParent[] };
+
+/** Makes parent accounts for every student who has none (students added before parent accounts existed). */
+export async function createMissingParentsAction(): Promise<MissingParentsState> {
+  await requireRole("admin");
+  try {
+    const store = getStore();
+    const students = await studentsWithoutParents(store);
+    const created = await ensureParents(store, students.map((s) => s.id), generateTempPassword);
+    revalidatePath("/prep/admin/people");
+    return { created };
+  } catch (e) {
+    if (e instanceof ParentError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
+    throw e;
+  }
+}
+
+export type MoveChildState = { error?: string; success?: string };
+
+/** Adds a child (usually a sibling) to this parent account, by Student ID. */
+export async function moveChildAction(_prev: MoveChildState, formData: FormData): Promise<MoveChildState> {
+  await requireRole("admin");
+  const parentId = userIdSchema.safeParse(formData.get("parentId"));
+  const studentLoginId = z.string().trim().min(1).max(32).safeParse(formData.get("studentLoginId"));
+  if (!parentId.success) return { error: "Unknown parent account." };
+  if (!studentLoginId.success) return { error: "Enter the child's Student ID." };
+  try {
+    const { removedParent } = await moveChildToParent(getStore(), studentLoginId.data, parentId.data);
+    revalidatePath("/prep/admin/people");
+    return {
+      success: `${studentLoginId.data.toUpperCase()} added.` + (removedParent ? ` Their old parent account ${removedParent} was removed.` : ""),
+    };
+  } catch (e) {
+    if (e instanceof ParentError) return { error: e.message };
     const problem = sheetProblemMessage(e);
     if (problem) return { error: problem };
     throw e;

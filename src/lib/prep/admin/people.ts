@@ -1,5 +1,7 @@
 import { randomInt } from "node:crypto";
+import { findAccountById, type Account } from "@/lib/prep/auth/accounts";
 import { normaliseLoginId } from "@/lib/prep/auth/login";
+import { ensureParents, type NewParent } from "@/lib/prep/parents";
 import { hashPassword } from "@/lib/prep/auth/password";
 import {
   insert,
@@ -63,14 +65,20 @@ export function newUserRow(fields: Pick<User, "loginId" | "name" | "role" | "cla
 
 export type NewAccount = { loginId: string; name: string; role: Role; classId?: string | null };
 
-/** Creates an account with a temporary password the user must change on first login. */
-export async function createAccount(store: Store, input: NewAccount): Promise<{ id: string; tempPassword: string }> {
+/**
+ * Creates an account with a temporary password the user must change on first login.
+ * A new student also gets a parent account (see parents.ts), returned as `parent`.
+ */
+export async function createAccount(store: Store, input: NewAccount): Promise<{ id: string; tempPassword: string; parent?: NewParent }> {
   const loginId = normaliseLoginId(input.loginId);
   const name = input.name.trim().replace(/\s+/g, " ");
   if (!LOGIN_ID_PATTERN.test(loginId)) {
     throw new AccountError("IDs use letters, numbers and dashes only (2 to 32 characters).");
   }
   if (!name) throw new AccountError("Enter the person's name.");
+  if ((await store.read("parents")).parents.some((p) => p.loginId.toUpperCase() === loginId)) {
+    throw new AccountError(`The ID ${loginId} is a parent's ID. Choose another.`);
+  }
   if (input.role === "student") {
     if (!input.classId) throw new AccountError("Choose a class for the student.");
     const { classes } = await store.read("classes");
@@ -93,22 +101,24 @@ export async function createAccount(store: Store, input: NewAccount): Promise<{ 
     if (e instanceof StoreConflictError) throw new AccountError(`The ID ${loginId} is already in use.`);
     throw e;
   }
-  return { id: row.id, tempPassword };
+  if (input.role !== "student") return { id: row.id, tempPassword };
+  const [parent] = await ensureParents(store, [row.id], generateTempPassword);
+  return { id: row.id, tempPassword, parent };
 }
 
-async function getUser(store: Store, userId: string): Promise<User> {
-  const { users } = await store.read("users");
-  const u = users.find((x) => x.id === userId);
-  if (!u) throw new AccountError("That account no longer exists.");
-  return u;
+/** Any account, school or parent. */
+async function getAccount(store: Store, id: string): Promise<Account> {
+  const a = await findAccountById(store, id);
+  if (!a) throw new AccountError("That account no longer exists.");
+  return a;
 }
 
-/** New temporary password, clears any lockout, and signs the user out everywhere. */
+/** New temporary password, clears any lockout, and signs the user out everywhere. Works for parents too. */
 export async function resetPassword(store: Store, userId: string): Promise<{ loginId: string; tempPassword: string }> {
-  const u = await getUser(store, userId);
+  const { table, row: u } = await getAccount(store, userId);
   const tempPassword = generateTempPassword();
   await store.write([
-    update("users", u.id, {
+    update(table, u.id, {
       passwordHash: await hashPassword(tempPassword),
       mustChangePassword: true,
       failedLoginCount: 0,
@@ -122,9 +132,9 @@ export async function resetPassword(store: Store, userId: string): Promise<{ log
 /** Switch an account on or off. Switching off signs the user out. Admins can't switch themselves off. */
 export async function setAccountActive(store: Store, actorId: string, userId: string, active: boolean) {
   if (!active && actorId === userId) throw new AccountError("You can't switch off your own account.");
-  const u = await getUser(store, userId);
+  const { table, row: u } = await getAccount(store, userId);
   if (u.active === active) return;
-  await store.write([update("users", u.id, active ? { active } : { active, sessionVersion: u.sessionVersion + 1 })]);
+  await store.write([update(table, u.id, active ? { active } : { active, sessionVersion: u.sessionVersion + 1 })]);
 }
 
 // ---------------------------------------------------------------------------
@@ -240,7 +250,8 @@ export const parseStudentCsv = (text: string) => parseAccountCsv(text, "student"
 
 export type ImportResult = {
   role: Role;
-  created: { loginId: string; name: string; className: string; tempPassword: string }[];
+  /** For students, `parent` is the parent account made with them. */
+  created: { loginId: string; name: string; className: string; tempPassword: string; parent?: { loginId: string; tempPassword: string } }[];
   updated: number;
   unchanged: number;
   problems: RowProblem[];
@@ -256,7 +267,8 @@ export async function importAccounts(store: Store, csvText: string, role: Role):
   const empty = { role, created: [], updated: 0, unchanged: 0 };
   if (problems.length) return { ...empty, problems };
 
-  const { users, classes } = await store.read("users", "classes");
+  const { users, classes, parents } = await store.read("users", "classes", "parents");
+  const parentIds = new Set(parents.map((p) => p.loginId.toUpperCase()));
   const classMap = classIdsByName(classes);
   const byLogin = new Map(users.map((u) => [u.loginId.toUpperCase(), u]));
   const classOf = (r: AccountRow) => (role === "student" ? classMap.get(r.className.toUpperCase())! : null);
@@ -265,6 +277,7 @@ export async function importAccounts(store: Store, csvText: string, role: Role):
     if (role === "student" && !classMap.has(r.className.toUpperCase())) {
       problems.push({ line: r.line, message: `There is no class called "${r.className}". Add it first or fix the spelling.` });
     }
+    if (parentIds.has(r.loginId)) problems.push({ line: r.line, message: `${r.loginId} is a parent's ID. Choose another.` });
     const u = byLogin.get(r.loginId);
     if (u && u.role !== role) {
       problems.push({
@@ -285,12 +298,10 @@ export async function importAccounts(store: Store, csvText: string, role: Role):
   );
 
   const ops: WriteOp[] = [];
-  if (toCreate.length) {
-    const newRows = toCreate.map((r) =>
-      newUserRow({ loginId: r.loginId, name: r.name, role, classId: classOf(r), passwordHash: r.passwordHash, mustChangePassword: true }),
-    );
-    ops.push(insert("users", newRows, { unique: ["loginId"] }));
-  }
+  const newRows = toCreate.map((r) =>
+    newUserRow({ loginId: r.loginId, name: r.name, role, classId: classOf(r), passwordHash: r.passwordHash, mustChangePassword: true }),
+  );
+  if (newRows.length) ops.push(insert("users", newRows, { unique: ["loginId"] }));
 
   let updated = 0;
   let unchanged = 0;
@@ -315,9 +326,12 @@ export async function importAccounts(store: Store, csvText: string, role: Role):
     throw e;
   }
 
+  // Students first, then their parents: if this second step fails, "Create missing parent accounts" finishes it.
+  const madeParents = role === "student" && newRows.length ? await ensureParents(store, newRows.map((r) => r.id), generateTempPassword) : [];
+  const parentOf = new Map(madeParents.map((p) => [p.studentLoginId, { loginId: p.loginId, tempPassword: p.tempPassword }]));
   return {
     role,
-    created: toCreate.map(({ loginId, name, className, tempPassword }) => ({ loginId, name, className, tempPassword })),
+    created: toCreate.map(({ loginId, name, className, tempPassword }) => ({ loginId, name, className, tempPassword, parent: parentOf.get(loginId) })),
     updated,
     unchanged,
     problems: [],

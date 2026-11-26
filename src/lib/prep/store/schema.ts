@@ -239,9 +239,41 @@ export const tables = {
       createdAt: date,
     },
   },
+  parents: {
+    sheet: "Parents",
+    /**
+     * Parent / guardian accounts: view-only access to their children's work. Their own login ID (TP11 for
+     * student TMH11) and their own password, so a child never knows the parent's password or the other way round.
+     */
+    columns: {
+      id: str,
+      /** Parent ID used to log in. Upper-cased; unique among parents and never used by a student or staff account. */
+      loginId: str,
+      name: str,
+      passwordHash: str,
+      active: bool,
+      mustChangePassword: bool,
+      failedLoginCount: num,
+      lockedUntil: optDate,
+      lastLoginAt: optDate,
+      sessionVersion: num,
+      createdAt: date,
+    },
+  },
+  parentLinks: {
+    sheet: "ParentLinks",
+    /** Which children a parent account can see. Siblings share one parent account. */
+    columns: { id: str, parentId: str, studentId: str, createdAt: date },
+  },
 } as const satisfies Record<string, { sheet: string; columns: Record<string, Col> & { id: Col } }>;
 
 export type TableName = keyof typeof tables;
+
+/**
+ * Tables of the newer features. With PREP_DATABASE_URL set they live in the Postgres database (Supabase)
+ * instead of the Sheet, the first step of moving off Google Sheets. See store/index.ts.
+ */
+export const DATABASE_TABLES = ["parents", "parentLinks"] as const satisfies readonly TableName[];
 
 type ValueOf<C> = C extends { type: "enum"; values: readonly (infer V)[] }
   ? V
@@ -274,3 +306,5 @@ export type Attempt = RowOf<"attempts">;
 export type Assignment = RowOf<"assignments">;
 export type Notice = RowOf<"notices">;
 export type MarkQuery = RowOf<"markQueries">;
+export type Parent = RowOf<"parents">;
+export type ParentLink = RowOf<"parentLinks">;

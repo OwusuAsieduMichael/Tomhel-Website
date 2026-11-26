@@ -1,4 +1,4 @@
-import type { Role } from "@/lib/prep/store";
+import type { SessionRole as Role } from "@/lib/prep/auth/accounts";
 
 export type NavIcon = "home" | "book" | "chart" | "user" | "clipboard" | "inbox" | "users" | "school" | "library";
 
@@ -25,6 +25,10 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "Questions", href: "/prep/admin/questions", icon: "library" },
     { label: "Profile", href: "/prep/admin/profile", icon: "user" },
   ],
+  parent: [
+    { label: "My children", href: "/prep/parent", icon: "home" },
+    { label: "Profile", href: "/prep/parent/profile", icon: "user" },
+  ],
 };
 
 /** Sub-tabs inside Academic Preparation (students). */
@@ -39,4 +43,4 @@ export function isActive(item: { href: string }, pathname: string, isHome: boole
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-export const roleLabel: Record<Role, string> = { student: "Student", teacher: "Teacher", admin: "Admin" };
+export const roleLabel: Record<Role, string> = { student: "Student", teacher: "Teacher", admin: "Admin", parent: "Parent" };

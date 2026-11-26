@@ -6,12 +6,16 @@ import { cn } from "@/lib/utils";
 import { Field, FormMessage, prepButton, SelectField } from "@/components/prep/ui";
 import {
   createAccountAction,
+  createMissingParentsAction,
   importAccountsAction,
+  moveChildAction,
   resetPasswordAction,
   setActiveAction,
   type AccountFormState,
   type ImportFormState,
   type IssuedPassword,
+  type MissingParentsState,
+  type MoveChildState,
 } from "../actions";
 
 type ClassOption = { id: string; name: string };
@@ -87,6 +91,7 @@ export function AddAccountForm({ role, classes }: { role: Role; classes: ClassOp
     <form ref={formRef} action={action} className="space-y-4" noValidate>
       <FormMessage error={state.error} />
       {state.issued ? <IssuedPasswordNote issued={state.issued} /> : null}
+      {state.parent ? <IssuedPasswordNote issued={state.parent} /> : null}
       <input type="hidden" name="role" value={role} />
       <Field label={ROLE_LABEL[role].id} name="loginId" autoCapitalize="characters" spellCheck={false} required />
       <Field label="Full name" name="name" autoComplete="off" required />
@@ -113,18 +118,26 @@ function csvCell(v: string) {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
-function downloadPasswords(role: Role, rows: { loginId: string; name: string; className: string; tempPassword: string }[]) {
-  const student = role === "student";
-  const lines = [
-    student ? "Student ID,Name,Class,Temporary password" : "Staff ID,Name,Temporary password",
-    ...rows.map((r) => (student ? [r.loginId, r.name, r.className, r.tempPassword] : [r.loginId, r.name, r.tempPassword]).map(csvCell).join(",")),
-  ];
-  const url = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/csv" }));
+function saveCsv(fileName: string, lines: string[][]) {
+  const url = URL.createObjectURL(new Blob([lines.map((l) => l.map(csvCell).join(",")).join("\r\n")], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `new-${ROLE_LABEL[role].one}-passwords.csv`;
+  a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+type CreatedRow = { loginId: string; name: string; className: string; tempPassword: string; parent?: { loginId: string; tempPassword: string } };
+
+/** New students come with their parent's login on the same line, to print one slip per family. */
+function downloadPasswords(role: Role, rows: CreatedRow[]) {
+  const student = role === "student";
+  saveCsv(`new-${ROLE_LABEL[role].one}-passwords.csv`, [
+    student ? ["Student ID", "Name", "Class", "Temporary password", "Parent ID", "Parent temporary password"] : ["Staff ID", "Name", "Temporary password"],
+    ...rows.map((r) =>
+      student ? [r.loginId, r.name, r.className, r.tempPassword, r.parent?.loginId ?? "", r.parent?.tempPassword ?? ""] : [r.loginId, r.name, r.tempPassword],
+    ),
+  ]);
 }
 
 /** A blank list with the right header row, so the admin can fill it in Excel or Google Sheets. */
@@ -165,7 +178,7 @@ export function ImportAccountsForm({ role }: { role: Role }) {
           <p id={`import-hint-${role}`} className="text-sm text-prep-muted">
             Columns: {columns}. Export from Excel or Google Sheets as CSV.{" "}
             {role === "student"
-              ? "Existing students are moved or renamed; their passwords stay the same."
+              ? "Existing students are moved or renamed; their passwords stay the same. Each new student also gets a parent account."
               : `Existing ${many} are renamed; their passwords stay the same. Assign teachers' subjects and classes afterwards.`}{" "}
             <button type="button" onClick={() => downloadTemplate(role)} className="font-semibold text-prep-primary underline">
               Download a blank list
@@ -208,6 +221,88 @@ export function ImportAccountsForm({ role }: { role: Role }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Parent accounts for students added before parent accounts existed. Shown while any student has none. */
+export function MissingParentsCard({ count }: { count: number }) {
+  const [state, action, pending] = useActionState<MissingParentsState>(createMissingParentsAction, {});
+  const created = state.created;
+  return (
+    <div className="space-y-3">
+      {created ? (
+        <div role="status" className="space-y-3 rounded-xl border border-prep-awarded/30 bg-prep-primary-soft px-4 py-3 text-sm">
+          <p>
+            <span className="font-semibold">{created.length} parent accounts made.</span> Download their temporary passwords now: they are shown only
+            once.
+          </p>
+          <button
+            type="button"
+            className={prepButton()}
+            onClick={() =>
+              saveCsv("parent-passwords.csv", [
+                ["Parent ID", "Temporary password", "Child's Student ID", "Child's name"],
+                ...created.map((p) => [p.loginId, p.tempPassword, p.studentLoginId, p.studentName]),
+              ])
+            }
+          >
+            <Download aria-hidden /> Download parent passwords (CSV)
+          </button>
+        </div>
+      ) : (
+        <form action={action} className="space-y-3">
+          <FormMessage error={state.error} />
+          <p className="text-sm">
+            {count === 1 ? "1 student has" : `${count} students have`} no parent account yet. Each gets one with a Parent ID from their Student ID
+            (TMH11 → TP11) and a temporary password of its own.
+          </p>
+          <button type="submit" className={prepButton()} disabled={pending}>
+            {pending ? "Making accounts…" : "Create the parent accounts"}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/** Adds a child (a sibling) to a parent account by Student ID. */
+export function AddChildForm({ parentId, parentLoginId }: { parentId: string; parentLoginId: string }) {
+  const [state, action, pending] = useActionState<MoveChildState, FormData>(moveChildAction, {});
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (state.success) formRef.current?.reset();
+  }, [state]);
+  return (
+    <form
+      ref={formRef}
+      action={action}
+      className="space-y-1.5"
+      onSubmit={(e) => {
+        const id = new FormData(e.currentTarget).get("studentLoginId");
+        if (!confirm(`Put ${String(id).toUpperCase()} on ${parentLoginId}? If their own parent account has no other children, it is removed.`)) e.preventDefault();
+      }}
+    >
+      <input type="hidden" name="parentId" value={parentId} />
+      <div className="flex gap-2">
+        <label className="sr-only" htmlFor={`child-${parentId}`}>
+          Student ID of a child to add to {parentLoginId}
+        </label>
+        <input
+          id={`child-${parentId}`}
+          name="studentLoginId"
+          placeholder="Student ID"
+          autoCapitalize="characters"
+          spellCheck={false}
+          required
+          className="min-h-9 w-28 rounded-lg border border-prep-input bg-prep-surface px-2 text-xs"
+        />
+        <button type="submit" className={cn(prepButton({ variant: "secondary" }), "px-3 text-xs")} disabled={pending}>
+          {pending ? "Adding…" : "Add child"}
+        </button>
+      </div>
+      {state.error ? <p className="text-xs text-prep-incorrect">{state.error}</p> : null}
+      {state.success ? <p className="text-xs text-prep-awarded">{state.success}</p> : null}
+    </form>
   );
 }
 

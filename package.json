@@ -15,7 +15,8 @@
     "prep:import": "tsx scripts/import-papers.ts",
     "pasco:objectives": "tsx scripts/pasco/extract-objectives.ts",
     "pasco:theory": "tsx scripts/pasco/extract-theory.ts",
-    "prep:bootstrap": "tsx scripts/bootstrap.ts"
+    "prep:bootstrap": "tsx scripts/bootstrap.ts",
+    "prep:move-to-database": "tsx scripts/move-to-database.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -36,6 +37,7 @@
     "framer-motion": "^12.9.2",
     "lucide-react": "^0.503.0",
     "next": "^15.3.1",
+    "postgres": "^3.4.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.1",
@@ -44,6 +46,7 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.4",
     "@types/node": "^22.15.3",
