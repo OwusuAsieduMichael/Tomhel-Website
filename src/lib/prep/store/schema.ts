@@ -47,6 +47,9 @@ export const QUESTION_KINDS = ["objective", "theory"] as const;
 export const QUERY_STATUSES = ["open", "answered"] as const;
 /** How set work is shown to students: under Quiz or under Assignments. */
 export const WORK_CATEGORIES = ["assignment", "quiz"] as const;
+/** The website's News & Events tabs. */
+export const NEWS_CATEGORIES = ["Events", "Announcements", "Achievements"] as const;
+export const NEWS_STATUSES = ["draft", "published"] as const;
 
 export const tables = {
   classes: {
@@ -288,6 +291,48 @@ export const tables = {
       createdAt: date,
     },
   },
+  graduations: {
+    sheet: "Graduations",
+    /**
+     * A final-year student who has graduated. From `graduatedOn`, the student and their parents see a
+     * congratulations message (`message`) on their home page. One row per student.
+     */
+    columns: {
+      id: str,
+      studentId: str,
+      classId: str,
+      /** The class's name and year at the time, e.g. "JHS 3A", "2025/2026", kept if the class is renamed later. */
+      className: str,
+      academicYear: str,
+      graduatedOn: date,
+      message: str,
+      createdBy: str,
+      createdAt: date,
+    },
+  },
+  newsPosts: {
+    sheet: "NewsPosts",
+    /** News and dates on the public website (News & Events), written by admins in the portal. */
+    columns: {
+      id: str,
+      /** In the address: /news/<slug>. Unique. */
+      slug: str,
+      title: str,
+      category: oneOf(NEWS_CATEGORIES),
+      /** One or two sentences for the news cards. */
+      excerpt: str,
+      /** Paragraphs separated by blank lines. */
+      body: str,
+      /** For events and dates (graduation, sports day, vacation): when it happens. Shown under "Upcoming dates". */
+      eventStart: optDate,
+      eventEnd: optDate,
+      status: oneOf(NEWS_STATUSES),
+      publishedAt: optDate,
+      createdBy: str,
+      createdAt: date,
+      updatedAt: date,
+    },
+  },
 } as const satisfies Record<string, { sheet: string; columns: Record<string, Col> & { id: Col } }>;
 
 export type TableName = keyof typeof tables;
@@ -296,7 +341,7 @@ export type TableName = keyof typeof tables;
  * Tables of the newer features. With PREP_DATABASE_URL set they live in the Postgres database (Supabase)
  * instead of the Sheet, the first step of moving off Google Sheets. See store/index.ts.
  */
-export const DATABASE_TABLES = ["parents", "parentLinks", "practiceItems"] as const satisfies readonly TableName[];
+export const DATABASE_TABLES = ["parents", "parentLinks", "practiceItems", "graduations", "newsPosts"] as const satisfies readonly TableName[];
 
 type ValueOf<C> = C extends { type: "enum"; values: readonly (infer V)[] }
   ? V
@@ -332,3 +377,5 @@ export type MarkQuery = RowOf<"markQueries">;
 export type Parent = RowOf<"parents">;
 export type ParentLink = RowOf<"parentLinks">;
 export type PracticeItem = RowOf<"practiceItems">;
+export type Graduation = RowOf<"graduations">;
+export type NewsPost = RowOf<"newsPosts">;

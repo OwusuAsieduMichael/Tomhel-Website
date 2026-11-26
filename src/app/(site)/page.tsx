@@ -15,6 +15,9 @@ import { StatsSection } from "@/components/sections/stats-section";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { kitchenStaffSection, siteConfig, transportSection } from "@/lib/constants";
 
+/** Shows the latest news, including posts written in the portal: refreshed at least every five minutes. */
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Home",
   description: siteConfig.description,

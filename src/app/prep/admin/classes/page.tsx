@@ -6,6 +6,8 @@ import { requireRole } from "@/lib/prep/auth/current-user";
 import { getStore } from "@/lib/prep/store";
 import { listClassesWithCounts, listPeople, listSubjectsWithTeachers } from "@/lib/prep/queries";
 import { unassignTeacherAction } from "../actions";
+import { DEFAULT_GRADUATION_MESSAGE, finalYearClasses } from "@/lib/prep/graduation";
+import { GraduateClassCard } from "./graduation-forms";
 import { AddClassForm, AssignTeacherForm } from "./teaching-forms";
 
 export const metadata: Metadata = { title: "Classes & subjects" };
@@ -13,11 +15,12 @@ export const metadata: Metadata = { title: "Classes & subjects" };
 export default async function ClassesPage() {
   await requireRole("admin");
   const store = getStore();
-  const [classRows, subjectRows, assignments, people] = await Promise.all([
+  const [classRows, subjectRows, assignments, people, finalClasses] = await Promise.all([
     listClassesWithCounts(store),
     listSubjectsWithTeachers(store),
     listTeachingAssignments(store),
     listPeople(store),
+    finalYearClasses(store),
   ]);
   const teachers = people.filter((p) => p.role === "teacher" && p.active).map((p) => ({ id: p.id, name: p.name, loginId: p.loginId }));
   const latestYear = [...classRows.map((c) => c.academicYear)].sort().at(-1) ?? "2026/2027";
@@ -69,6 +72,32 @@ export default async function ClassesPage() {
           <h3 className="mb-3 font-semibold">Add a class</h3>
           <AddClassForm defaultYear={latestYear} />
         </PrepCard>
+      </section>
+
+      <section aria-labelledby="graduation-heading" className="space-y-3">
+        <div>
+          <h2 id="graduation-heading" className="text-lg font-bold">
+            Graduation
+          </h2>
+          <p className="text-sm text-prep-muted">
+            When the final-year class finishes, graduate it here. From the date you choose, each student and their parents see a congratulations
+            message on their home page. Students keep their accounts.
+          </p>
+        </div>
+        {finalClasses.length ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {finalClasses.map((c) => (
+              <GraduateClassCard
+                key={c.id}
+                c={{ ...c, graduatedOn: c.graduatedOn ? c.graduatedOn.toISOString().slice(0, 10) : null }}
+                defaultMessage={DEFAULT_GRADUATION_MESSAGE}
+                today={new Date().toISOString().slice(0, 10)}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-prep-muted">No JHS 3 classes yet.</p>
+        )}
       </section>
 
       <section aria-labelledby="subjects-heading" className="space-y-3">

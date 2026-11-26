@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatEventDates } from "@/lib/news-dates";
 import type { NewsArticle } from "@/lib/sanity";
 
 const categories = ["All", "Events", "Announcements", "Achievements"];
@@ -52,6 +53,9 @@ export function NewsList({ articles }: NewsListProps) {
                     )}
                     <div className="p-6">
                       <Badge className="mb-3">{article.category}</Badge>
+                      {article.eventStart ? (
+                        <p className="mb-2 text-sm font-semibold text-accent">{formatEventDates(article.eventStart, article.eventEnd)}</p>
+                      ) : null}
                       <h2 className="text-lg font-semibold text-primary group-hover:text-accent">{article.title}</h2>
                       <p className="mt-2 line-clamp-3 text-sm text-deep">{article.excerpt}</p>
                       <time className="mt-4 block text-xs text-deep opacity-80" dateTime={article.publishedAt}>
