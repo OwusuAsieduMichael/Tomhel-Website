@@ -36,6 +36,30 @@ export async function startAttemptAction(_prev: StartState, formData: FormData):
   redirect(`/prep/practice/${id}`);
 }
 
+/**
+ * Takes a BECE paper again, the same way as last time (mode and time limit). The progress report then shows
+ * the new score for the paper, with the earlier ones under it. An unfinished retake is resumed, not doubled.
+ */
+export async function retakeAttemptAction(_prev: StartState, formData: FormData): Promise<StartState> {
+  const user = await requireRole("student");
+  const attemptId = z.string().uuid().safeParse(formData.get("attemptId"));
+  if (!attemptId.success) return { error: "That paper couldn't be found." };
+  const store = getStore();
+  const { attempts } = await store.read("attempts");
+  const before = attempts.find((a) => a.id === attemptId.data && a.studentId === user.id);
+  if (!before?.paperId || before.assignmentId) return { error: "Only BECE past papers you started yourself can be retaken here." };
+  let id: string;
+  try {
+    ({ id } = await startAttempt(store, user.id, { paperId: before.paperId, mode: before.mode, timeLimitMinutes: before.timeLimitMinutes }));
+  } catch (e) {
+    if (e instanceof AttemptError) return { error: e.message };
+    const problem = sheetProblemMessage(e);
+    if (problem) return { error: problem };
+    throw e;
+  }
+  redirect(`/prep/practice/${id}`);
+}
+
 export async function startAssignmentAction(_prev: StartState, formData: FormData): Promise<StartState> {
   const user = await requireRole("student");
   const assignmentId = z.string().uuid().safeParse(formData.get("assignmentId"));

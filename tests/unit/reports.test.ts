@@ -47,6 +47,7 @@ const data = {
   papers: [
     { id: "p-soc-2021", subjectId: SOC, year: 2021, paperNo: 1 },
     { id: "p-math-2020", subjectId: MATH, year: 2020, paperNo: 1 },
+    { id: "p-math-2019", subjectId: MATH, year: 2019, paperNo: 2 },
   ],
   questions: [],
   mcqOptions: [],
@@ -63,7 +64,7 @@ const data = {
   attempts: [
     attempt("bece-1", { paperId: "p-soc-2021", score: 30, max: 40, daysAgo: 5 }), // 75%
     attempt("bece-2", { paperId: "p-math-2020", score: 10, max: 40, pending: 20, daysAgo: 4 }), // 10/20 marked = 50%
-    attempt("bece-3", { paperId: "p-math-2020", score: 0, max: 30, pending: 30, daysAgo: 3 }), // all with a teacher: no %
+    attempt("bece-3", { paperId: "p-math-2019", score: 0, max: 30, pending: 30, daysAgo: 3 }), // all with a teacher: no %
     attempt("bece-4", { paperId: "p-soc-2021", score: 5, max: 40, daysAgo: 1, status: "in_progress" }), // not finished: not counted
     attempt("quiz-1", { paperId: "p-soc-2021", assignmentId: "q1", score: 8, max: 10, daysAgo: 2 }), // 80%
     attempt("asg-1", { paperId: "p-math-2020", assignmentId: "a1", score: 4, max: 10, daysAgo: 2 }),
@@ -88,6 +89,21 @@ describe("progress report", () => {
       { subjectId: MATH, name: "Mathematics", done: 2, average: 50 },
       { subjectId: SOC, name: "Social Studies", done: 1, average: 75 },
     ]);
+  });
+
+  it("BECE Prep: a retaken paper counts once, with its latest score; earlier tries stay in its history and the trend", () => {
+    const retaken = {
+      ...data,
+      attempts: [...data.attempts, attempt("bece-5", { paperId: "p-soc-2021", score: 36, max: 40, daysAgo: 0.5 })], // 90%, retake of bece-1
+    } as unknown as ReportData;
+    const { bece } = buildReport(retaken, student, null, now);
+    expect(bece.done).toBe(3);
+    const soc = bece.items.find((i) => i.subjectId === SOC)!;
+    expect(soc).toMatchObject({ attemptId: "bece-5", percent: 90 });
+    expect(soc.earlier!.map((e) => [e.attemptId, e.percent])).toEqual([["bece-1", 75]]);
+    expect(bece.average).toBe(70); // (90 + 50) / 2: the retake replaces 75
+    expect(bece.best).toBe(90);
+    expect(bece.history.map((i) => i.attemptId)).toEqual(["bece-5", "bece-3", "bece-2", "bece-1"]);
   });
 
   it("Quizzes: set, done, still open and missed", () => {
