@@ -435,7 +435,8 @@ export async function sendReminder(store: Store, actor: Actor, id: string, now =
 // ---------------------------------------------------------------------------
 
 /** One student's standing on an assignment, from all their attempts at it. */
-function standing(attempts: Attempt[], policy: Assignment["attemptPolicy"]) {
+/** The attempt that counts for a piece of set work: the first submitted, or the best when several are allowed. */
+export function standing(attempts: Attempt[], policy: Assignment["attemptPolicy"]) {
   const submitted = attempts.filter((t) => t.status === "submitted");
   const running = attempts.find((t) => t.status === "in_progress");
   const pick = policy === "best"
