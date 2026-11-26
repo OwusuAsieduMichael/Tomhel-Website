@@ -7,7 +7,9 @@ import type { SqlClient } from "./postgres-backend";
  * statements are off because the transaction pooler doesn't keep them between requests.
  */
 export function postgresClient(url: string): SqlClient {
-  const sql = postgres(url, { prepare: false, max: 5, idle_timeout: 20, connect_timeout: 15 });
+  // Encrypted to any real server; a database on this computer (development) may not offer SSL.
+  const local = /@(localhost|127\.0\.0\.1)(:|\/)/.test(url);
+  const sql = postgres(url, { prepare: false, max: 5, idle_timeout: 20, connect_timeout: 15, ssl: local ? false : "require" });
   type Runner = { unsafe: (text: string, params?: never[]) => Promise<Record<string, unknown>[]> };
   const wrap = (s: Runner): Omit<SqlClient, "transaction"> => ({
     query: async (text, params = []) => [...(await s.unsafe(text, params as never[]))],

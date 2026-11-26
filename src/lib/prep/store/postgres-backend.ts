@@ -118,6 +118,10 @@ export class PostgresBackend implements Backend {
         for (const c of missing) await this.sql.query(`alter table ${ident(table)} add column ${ident(c)} text not null default ''`);
         if (missing.length) addedColumns[table] = missing;
       }
+      // Supabase serves every table through its public web API unless row-level security is on. The website
+      // connects directly as the database owner (which RLS doesn't restrict), so RLS with no policies shuts
+      // that API out completely: nobody with the project's public key can read password hashes or answers.
+      await this.sql.query(`alter table ${ident(table)} enable row level security`);
       this.columns.delete(table);
     }
     return { created, addedColumns };
