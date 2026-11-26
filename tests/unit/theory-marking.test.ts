@@ -65,6 +65,17 @@ describe("markTheory", () => {
     expect(markTheory("Painting and galvanising.", two).awarded).toBe(2);
   });
 
+  it("credits one answer written in several wordings ('a | b') only once", () => {
+    const ways = ["mediation | mediator | third party assists", "arbitration | arbitrator", "negotiation | negotiate | compromise", "adjudication | court"];
+    const points = [1, 2, 3].map((i) => point({ description: `A way of resolving conflict (${i})`, acceptedAlternatives: ways }));
+    // Mediation, said twice over: one mark, not two.
+    expect(markTheory("Mediation, where a mediator who is a third party assists.", points).awarded).toBe(1);
+    // Three different ways, in other wordings: three marks.
+    const r = markTheory("Using a mediator, going to court, and the parties can negotiate.", points);
+    expect(r.awarded).toBe(3);
+    expect(r.points.map((p) => p.found).sort()).toEqual(["court", "mediator", "negotiate"]);
+  });
+
   it("needs numbers to match exactly", () => {
     const p = [point({ description: "Area = 50 cm²", strictness: "exact", acceptedAlternatives: ["50 cm²", "50 cm2", "50 square centimetres"] })];
     expect(markTheory("Area = 10 × 5 = 50 cm²", p).awarded).toBe(1);

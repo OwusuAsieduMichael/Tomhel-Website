@@ -14,6 +14,7 @@
     "prep:seed": "tsx scripts/seed.ts",
     "prep:import": "tsx scripts/import-papers.ts",
     "pasco:objectives": "tsx scripts/pasco/extract-objectives.ts",
+    "pasco:theory": "tsx scripts/pasco/extract-theory.ts",
     "prep:bootstrap": "tsx scripts/bootstrap.ts"
   },
   "dependencies": {
