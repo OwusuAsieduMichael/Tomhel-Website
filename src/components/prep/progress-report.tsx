@@ -45,8 +45,10 @@ function BeceSection({ part, attemptHref, who }: { part: StudentReport["bece"]; 
   return (
     <section aria-labelledby="report-bece" className="space-y-4 break-inside-avoid-page">
       <SectionHeading id="report-bece" title="BECE Prep" sub={who === "self" ? "Past papers you practised on your own." : "Past papers practised on their own."} />
+      {part.practice.length ? <PracticeProgress lines={part.practice} /> : null}
       {part.done ? (
         <>
+          <h3 className="text-base font-bold">Test mode: past papers</h3>
           <dl className="grid grid-cols-3 gap-3">
             <Tile label="Papers done" value={String(part.done)} />
             <Tile label="Average" value={pctText(part.average)} />
@@ -57,9 +59,44 @@ function BeceSection({ part, attemptHref, who }: { part: StudentReport["bece"]; 
           <ItemList items={part.items} attemptHref={attemptHref} />
         </>
       ) : (
-        <PrepCard className="text-prep-muted">No past papers finished yet.</PrepCard>
+        <PrepCard className="text-prep-muted">No past papers finished in Test mode yet.</PrepCard>
       )}
     </section>
+  );
+}
+
+/** Practice mode: per subject, questions answered right at least once out of all of the subject's questions. */
+function PracticeProgress({ lines }: { lines: StudentReport["bece"]["practice"] }) {
+  return (
+    <figure className="break-inside-avoid space-y-2 rounded-2xl border border-prep-line bg-prep-surface p-4">
+      <figcaption>
+        <span className="text-sm font-bold">Practice mode: questions mastered</span>
+        <span className="block text-[13px] text-prep-muted">Every year mixed. A question is mastered once answered right; wrong ones keep coming back.</span>
+      </figcaption>
+      <ul className="space-y-2.5">
+        {lines.map((l) => {
+          const pct = l.total ? Math.round((l.mastered / l.total) * 100) : 0;
+          return (
+            <li
+              key={l.subjectId}
+              className="grid grid-cols-[minmax(7rem,10rem)_1fr_auto] items-center gap-3 text-sm"
+              title={`${l.name}: ${l.mastered} of ${l.total} mastered, ${l.toRedo} to get right`}
+            >
+              <span className="truncate">{l.name}</span>
+              <span className="h-2.5 overflow-hidden rounded-full bg-prep-track" aria-hidden>
+                <span className="block h-full rounded-full bg-prep-primary" style={{ width: `${pct}%` }} />
+              </span>
+              <span className="text-right tabular-nums">
+                <span className="font-semibold">
+                  {l.mastered}/{l.total}
+                </span>
+                {l.toRedo ? <span className="block text-xs text-prep-muted">{l.toRedo} to get right</span> : null}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </figure>
   );
 }
 

@@ -52,6 +52,7 @@ const data = {
   mcqOptions: [],
   markingPoints: [],
   modelAnswers: [],
+  practiceItems: [],
   classes: [{ id: CLASS, name: "JHS 3" }],
   assignments: [
     assignment("q1", { subjectId: SOC, category: "quiz", closesInDays: -1, paperId: "p-soc-2021" }), // closed, done
