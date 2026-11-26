@@ -1,11 +1,12 @@
 import { assignmentState, scopeOf, standing } from "./assignments";
 import type { SessionRole } from "./auth/accounts";
 import { attemptContext, PAPER_TABLES, type PaperData } from "./practice/attempts";
-import type { Assignment, Attempt, RowOf, Store, User } from "./store";
+import { mixedSummary } from "./practice/mixed";
+import type { Assignment, Attempt, PracticeItem, RowOf, Store, User } from "./store";
 
 /**
  * Progress reports. Every report has three parts and nothing else:
- * - BECE Prep: past papers the student practised on their own;
+ * - BECE Prep: past papers the student did on their own (Test mode), and Practice mode progress per subject;
  * - Quizzes and Assignments: work a teacher set for the student's class.
  * Students, their parents and their teachers see the same report. A teacher's copy covers only the subjects
  * they teach that student (the same rule as marking); admins see every subject.
@@ -13,10 +14,10 @@ import type { Assignment, Attempt, RowOf, Store, User } from "./store";
  * Scores count only what has been marked: a theory answer still with a teacher doesn't count as 0.
  */
 
-export type ReportData = PaperData & { attempts: Attempt[]; assignments: Assignment[]; classes: RowOf<"classes">[] };
+export type ReportData = PaperData & { attempts: Attempt[]; assignments: Assignment[]; classes: RowOf<"classes">[]; practiceItems: PracticeItem[] };
 
 export async function loadReportData(store: Store): Promise<ReportData> {
-  return store.read("attempts", "assignments", "classes", ...PAPER_TABLES);
+  return store.read("attempts", "assignments", "classes", "practiceItems", ...PAPER_TABLES);
 }
 
 export type ReportItem = {
@@ -37,7 +38,9 @@ export type SubjectLine = { subjectId: string; name: string; done: number; avera
 
 type Summary = { done: number; average: number | null; best: number | null; bySubject: SubjectLine[]; items: ReportItem[] };
 
-export type BecePart = Summary;
+/** Practice mode (mixed years) per subject: questions mastered out of the subject's questions. */
+export type PracticeLine = { subjectId: string; name: string; total: number; mastered: number; toRedo: number };
+export type BecePart = Summary & { practice: PracticeLine[] };
 /** Set work: how much was set, done, still open, and missed (closed without being done). */
 export type WorkPart = Summary & { set: number; open: number; missed: number; missedTitles: string[] };
 
@@ -125,7 +128,7 @@ export function buildReport(data: ReportData, student: Pick<User, "id" | "classI
 
   const activity = mine.map((t) => (t.submittedAt ?? t.startedAt).getTime());
   return {
-    bece: summarise(practice),
+    bece: { ...summarise(practice), practice: mixedSummary(data, student.id, subjects) },
     quizzes: work("quiz"),
     assignments: work("assignment"),
     lastActive: activity.length ? new Date(Math.max(...activity)) : null,

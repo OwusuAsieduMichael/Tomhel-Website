@@ -265,6 +265,29 @@ export const tables = {
     /** Which children a parent account can see. Siblings share one parent account. */
     columns: { id: str, parentId: str, studentId: str, createdAt: date },
   },
+  practiceItems: {
+    sheet: "PracticeItems",
+    /**
+     * Mixed practice: how a student is doing on one question, counting its repeats in other years as the same
+     * question (`groupKey`, see practice/mixed.ts). One row per student and question, made the first time they answer it.
+     */
+    columns: {
+      id: str,
+      studentId: str,
+      subjectId: str,
+      groupKey: str,
+      /** studentId + groupKey, unique: one row per student and question. */
+      itemKey: str,
+      lastQuestionId: str,
+      tries: num,
+      rightCount: num,
+      lastRight: bool,
+      /** Answered right at least once: it stops coming back. */
+      mastered: bool,
+      lastAt: date,
+      createdAt: date,
+    },
+  },
 } as const satisfies Record<string, { sheet: string; columns: Record<string, Col> & { id: Col } }>;
 
 export type TableName = keyof typeof tables;
@@ -273,7 +296,7 @@ export type TableName = keyof typeof tables;
  * Tables of the newer features. With PREP_DATABASE_URL set they live in the Postgres database (Supabase)
  * instead of the Sheet, the first step of moving off Google Sheets. See store/index.ts.
  */
-export const DATABASE_TABLES = ["parents", "parentLinks"] as const satisfies readonly TableName[];
+export const DATABASE_TABLES = ["parents", "parentLinks", "practiceItems"] as const satisfies readonly TableName[];
 
 type ValueOf<C> = C extends { type: "enum"; values: readonly (infer V)[] }
   ? V
@@ -308,3 +331,4 @@ export type Notice = RowOf<"notices">;
 export type MarkQuery = RowOf<"markQueries">;
 export type Parent = RowOf<"parents">;
 export type ParentLink = RowOf<"parentLinks">;
+export type PracticeItem = RowOf<"practiceItems">;

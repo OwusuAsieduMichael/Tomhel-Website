@@ -67,7 +67,8 @@ export class AttemptError extends Error {
 export const PAPER_TABLES = ["papers", "subjects", "questions", "mcqOptions", "markingPoints", "modelAnswers"] as const;
 export type PaperData = { [K in (typeof PAPER_TABLES)[number]]: RowOf<K>[] };
 
-function withAnswers(data: PaperData, q: RowOf<"questions">) {
+/** A question with its options (A-E), marking points and model answer. */
+export function withAnswers(data: PaperData, q: RowOf<"questions">) {
   return {
     ...q,
     options: data.mcqOptions.filter((o) => o.questionId === q.id).sort((a, b) => a.label.localeCompare(b.label)),
